@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>orch8 Solana Constructor</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f7f7f3;
+        --surface: #ffffff;
+        --line: #d7d8d0;
+        --text: #1f2528;
+        --muted: #5f686d;
+        --green: #1e7d5b;
+        --green-dark: #125840;
+        --blue: #2c62a3;
+        --red: #a13d32;
+        --amber: #9b6b1f;
+        --shadow: 0 10px 24px rgba(31, 37, 40, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        letter-spacing: 0;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+      }
+
+      button {
+        min-height: 36px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--surface);
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      button:hover {
+        border-color: var(--green);
+      }
+
+      button.primary {
+        border-color: var(--green);
+        background: var(--green);
+        color: #ffffff;
+      }
+
+      button.primary:hover {
+        background: var(--green-dark);
+      }
+
+      button.danger {
+        color: var(--red);
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        min-height: 38px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--surface);
+        color: var(--text);
+        padding: 8px 10px;
+      }
+
+      textarea {
+        resize: vertical;
+      }
+
+      pre {
+        margin: 0;
+        overflow: auto;
+        min-height: 320px;
+        max-height: 72vh;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #171b1d;
+        color: #edf2ee;
+        padding: 16px;
+        font: 13px/1.5 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      }
+
+      .app {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        min-height: 100vh;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        min-height: 64px;
+        padding: 12px 18px;
+        border-bottom: 1px solid var(--line);
+        background: var(--surface);
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 18px;
+        line-height: 1.2;
+      }
+
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--green);
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: minmax(320px, 420px) minmax(420px, 1fr);
+        min-height: 0;
+      }
+
+      .builder,
+      .output {
+        min-width: 0;
+        padding: 18px;
+      }
+
+      .builder {
+        border-right: 1px solid var(--line);
+        overflow: auto;
+      }
+
+      .output {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        gap: 14px;
+        overflow: auto;
+      }
+
+      .section {
+        display: grid;
+        gap: 14px;
+        margin-bottom: 22px;
+      }
+
+      .section h2 {
+        margin: 0;
+        font-size: 14px;
+        line-height: 1.25;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .step-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .step-item {
+        display: grid;
+        gap: 10px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        padding: 12px;
+        box-shadow: var(--shadow);
+      }
+
+      .step-top {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .step-title {
+        min-width: 0;
+        font-size: 13px;
+        font-weight: 750;
+        overflow-wrap: anywhere;
+      }
+
+      .step-actions {
+        display: flex;
+        gap: 6px;
+      }
+
+      .step-actions button {
+        width: 36px;
+        padding: 0;
+      }
+
+      .inline {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .checks {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+      }
+
+      .check {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 34px;
+        color: var(--text);
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      .check input {
+        width: 16px;
+        min-height: 16px;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 6px;
+      }
+
+      .tab {
+        min-width: 112px;
+        padding: 0 12px;
+      }
+
+      .tab.active {
+        border-color: var(--blue);
+        color: var(--blue);
+      }
+
+      .metric-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(120px, 1fr));
+        gap: 10px;
+      }
+
+      .metric {
+        border-left: 4px solid var(--line);
+        background: var(--surface);
+        padding: 10px 12px;
+      }
+
+      .metric:nth-child(1) {
+        border-left-color: var(--green);
+      }
+
+      .metric:nth-child(2) {
+        border-left-color: var(--blue);
+      }
+
+      .metric:nth-child(3) {
+        border-left-color: var(--amber);
+      }
+
+      .metric:nth-child(4) {
+        border-left-color: var(--red);
+      }
+
+      .metric-value {
+        display: block;
+        font-size: 18px;
+        font-weight: 750;
+      }
+
+      .metric-label {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      @media (max-width: 920px) {
+        main {
+          grid-template-columns: 1fr;
+        }
+
+        .builder {
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .metric-row {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      @media (max-width: 560px) {
+        header,
+        .toolbar,
+        .grid,
+        .inline,
+        .checks {
+          grid-template-columns: 1fr;
+        }
+
+        header,
+        .toolbar {
+          display: grid;
+          align-items: stretch;
+        }
+
+        .metric-row {
+          grid-template-columns: 1fr;
+        }
+
+        .tabs {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .tab {
+          min-width: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>orch8 Solana Constructor</h1>
+        <div class="status"><span class="dot" aria-hidden="true"></span><span id="statusText">Ready</span></div>
+      </header>
+      <main>
+        <section class="builder" aria-label="Constructor controls">
+          <div class="section">
+            <h2>Operation</h2>
+            <div class="grid">
+              <label>
+                Name
+                <input id="operationName" value="defi_migration_recoverable">
+              </label>
+              <label>
+                Namespace
+                <input id="namespace" value="solana_demo">
+              </label>
+              <label>
+                Failure
+                <select id="onFailure">
+                  <option value="rollback">rollback</option>
+                  <option value="park_assets">park_assets</option>
+                  <option value="ask_user">ask_user</option>
+                  <option value="stop">stop</option>
+                </select>
+              </label>
+              <label>
+                Unsafe rollback
+                <select id="ifRollbackUnsafe">
+                  <option value="park_assets">park_assets</option>
+                  <option value="ask_user">ask_user</option>
+                  <option value="stop">stop</option>
+                  <option value="rollback">rollback</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="toolbar">
+              <h2>Steps</h2>
+              <button class="primary" id="addStep" type="button">Add Step</button>
+            </div>
+            <div class="step-list" id="stepList"></div>
+          </div>
+        </section>
+
+        <section class="output" aria-label="Constructor output">
+          <div class="toolbar">
+            <div class="tabs" role="tablist" aria-label="Output tabs">
+              <button class="tab active" id="tabOperation" type="button">Operation</button>
+              <button class="tab" id="tabWorkflow" type="button">Workflow</button>
+            </div>
+            <div class="metric-row" aria-label="Operation summary">
+              <div class="metric"><span class="metric-value" id="stepCount">0</span><span class="metric-label">steps</span></div>
+              <div class="metric"><span class="metric-value" id="guardCount">0</span><span class="metric-label">guards</span></div>
+              <div class="metric"><span class="metric-value" id="rollbackCount">0</span><span class="metric-label">undo paths</span></div>
+              <div class="metric"><span class="metric-value" id="decisionCount">0</span><span class="metric-label">decisions</span></div>
+            </div>
+          </div>
+          <pre id="output" aria-live="polite"></pre>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      const state = {
+        tab: "operation",
+        steps: [
+          {
+            id: "withdraw_collateral",
+            handler: "withdraw_collateral",
+            undo: "redeposit_collateral",
+            retry: true,
+            guard: "check_withdrawable_balance",
+            fallback: "",
+            decision: false,
+          },
+          {
+            id: "swap_rewards",
+            handler: "swap_rewards_to_usdc",
+            undo: "swap_usdc_to_rewards",
+            retry: true,
+            guard: "",
+            fallback: "",
+            decision: true,
+          },
+          {
+            id: "deposit_protocol_b",
+            handler: "deposit_protocol_b",
+            undo: "",
+            retry: true,
+            guard: "check_protocol_capacity",
+            fallback: "park_assets",
+            decision: false,
+          },
+        ],
+      };
+
+      const elements = {
+        operationName: document.getElementById("operationName"),
+        namespace: document.getElementById("namespace"),
+        onFailure: document.getElementById("onFailure"),
+        ifRollbackUnsafe: document.getElementById("ifRollbackUnsafe"),
+        stepList: document.getElementById("stepList"),
+        addStep: document.getElementById("addStep"),
+        output: document.getElementById("output"),
+        statusText: document.getElementById("statusText"),
+        tabOperation: document.getElementById("tabOperation"),
+        tabWorkflow: document.getElementById("tabWorkflow"),
+        stepCount: document.getElementById("stepCount"),
+        guardCount: document.getElementById("guardCount"),
+        rollbackCount: document.getElementById("rollbackCount"),
+        decisionCount: document.getElementById("decisionCount"),
+      };
+
+      function render() {
+        renderSteps();
+        renderOutput();
+      }
+
+      function renderSteps() {
+        elements.stepList.innerHTML = "";
+        state.steps.forEach((step, index) => {
+          elements.stepList.appendChild(stepElement(step, index));
+        });
+      }
+
+      function renderOutput() {
+        const operation = buildOperation();
+        const workflow = buildWorkflow(operation);
+        const output = state.tab === "operation" ? operation : workflow;
+        elements.output.textContent = JSON.stringify(output, null, 2);
+
+        elements.stepCount.textContent = String(state.steps.length);
+        elements.guardCount.textContent = String(state.steps.filter((step) => step.guard).length);
+        elements.rollbackCount.textContent = String(state.steps.filter((step) => step.undo).length);
+        elements.decisionCount.textContent = String(state.steps.filter((step) => step.decision).length);
+        elements.statusText.textContent = `${operation.name} ready`;
+      }
+
+      function stepElement(step, index) {
+        const container = document.createElement("article");
+        container.className = "step-item";
+
+        container.innerHTML = `
+          <div class="step-top">
+            <div class="step-title">${index + 1}. ${escapeHtml(step.id || "new_step")}</div>
+            <div class="step-actions">
+              <button type="button" title="Move up" data-action="up">Up</button>
+              <button type="button" title="Move down" data-action="down">Dn</button>
+              <button class="danger" type="button" title="Remove" data-action="remove">X</button>
+            </div>
+          </div>
+          <div class="inline">
+            <label>Step id<input data-field="id" value="${escapeHtml(step.id)}"></label>
+            <label>Handler<input data-field="handler" value="${escapeHtml(step.handler)}"></label>
+          </div>
+          <div class="inline">
+            <label>Undo<input data-field="undo" value="${escapeHtml(step.undo)}"></label>
+            <label>Fallback<input data-field="fallback" value="${escapeHtml(step.fallback)}"></label>
+          </div>
+          <label>Guard<input data-field="guard" value="${escapeHtml(step.guard)}"></label>
+          <div class="checks">
+            <label class="check"><input type="checkbox" data-field="retry" ${step.retry ? "checked" : ""}>Retry</label>
+            <label class="check"><input type="checkbox" data-field="decision" ${step.decision ? "checked" : ""}>Decision</label>
+          </div>
+        `;
+
+        container.addEventListener("input", (event) => {
+          const target = event.target;
+          const field = target.dataset.field;
+          if (!field) return;
+          state.steps[index][field] = target.type === "checkbox" ? target.checked : target.value.trim();
+          renderOutput();
+        });
+
+        container.addEventListener("click", (event) => {
+          const action = event.target.dataset.action;
+          if (!action) return;
+          if (action === "remove") {
+            state.steps.splice(index, 1);
+          }
+          if (action === "up" && index > 0) {
+            const current = state.steps.splice(index, 1)[0];
+            state.steps.splice(index - 1, 0, current);
+          }
+          if (action === "down" && index < state.steps.length - 1) {
+            const current = state.steps.splice(index, 1)[0];
+            state.steps.splice(index + 1, 0, current);
+          }
+          render();
+        });
+
+        return container;
+      }
+
+      function buildOperation() {
+        return {
+          name: valueOr(elements.operationName.value, "solana_operation"),
+          namespace: valueOr(elements.namespace.value, "solana_demo"),
+          recoveryPolicy: {
+            onFailure: elements.onFailure.value,
+            ifRollbackUnsafe: elements.ifRollbackUnsafe.value,
+            ifAmbiguous: "ask_user",
+          },
+          steps: state.steps.map((step) => {
+            const output = {
+              id: valueOr(step.id, "step"),
+              do: valueOr(step.handler, "handler"),
+            };
+
+            if (step.undo) output.undo = step.undo;
+            if (step.fallback) output.fallback = step.fallback;
+            if (step.retry) {
+              output.retry = {
+                max_attempts: 3,
+                initial_backoff: 1000,
+                max_backoff: 5000,
+                backoff_multiplier: 2,
+              };
+            }
+            if (step.guard) {
+              output.guards = [
+                {
+                  id: step.guard.replaceAll(/[^a-zA-Z0-9_]/g, "_"),
+                  handler: step.guard,
+                },
+              ];
+            }
+            if (step.decision) {
+              output.userDecision = {
+                question: `${valueOr(step.id, "step")} failed. Retry, roll back, park assets, or wait?`,
+                choices: ["retry", "rollback", "park_assets", "wait"],
+                defaultChoice: "park_assets",
+                timeoutSeconds: 300,
+                onTimeout: "park_assets",
+              };
+            }
+
+            return output;
+          }),
+        };
+      }
+
+      function buildWorkflow(operation) {
+        const reversible = [];
+        return {
+          id: stableId(operation.namespace, operation.name),
+          tenant_id: "default",
+          name: operation.name,
+          namespace: operation.namespace,
+          version: 1,
+          created_at: "2026-05-07T00:00:00Z",
+          blocks: operation.steps.map((step) => {
+            const block = {
+              type: "try_catch",
+              id: `${step.id}_recoverable`,
+              try_block: [
+                ...(step.guards || []).map((guard) => ({
+                  type: "step",
+                  id: `${step.id}_guard_${guard.id}`,
+                  handler: guard.handler,
+                })),
+                {
+                  type: "step",
+                  id: step.id,
+                  handler: step.do,
+                  retry: step.retry,
+                },
+              ],
+              catch_block: recoveryBlocks(step, reversible, operation.recoveryPolicy),
+            };
+            if (step.undo) reversible.push(step);
+            return block;
+          }),
+        };
+      }
+
+      function recoveryBlocks(step, reversible, policy) {
+        if (step.userDecision) {
+          return [
+            {
+              type: "step",
+              id: `${step.id}_ask_user`,
+              handler: "ask_user",
+              params: {
+                failed_step: step.id,
+                question: step.userDecision.question,
+                choices: step.userDecision.choices,
+                default: step.userDecision.defaultChoice,
+                timeout_seconds: step.userDecision.timeoutSeconds,
+                on_timeout: step.userDecision.onTimeout,
+              },
+            },
+          ];
+        }
+
+        if (step.fallback) {
+          return [
+            {
+              type: "step",
+              id: `${step.id}_fallback`,
+              handler: step.fallback,
+              params: { failed_step: step.id },
+            },
+          ];
+        }
+
+        if (policy.onFailure === "rollback" && reversible.length > 0) {
+          return [...reversible].reverse().map((completed) => ({
+            type: "step",
+            id: `${step.id}_undo_${completed.id}`,
+            handler: completed.undo,
+            params: { original_step: completed.id },
+          }));
+        }
+
+        return [
+          {
+            type: "step",
+            id: `${step.id}_${policy.ifRollbackUnsafe}`,
+            handler: policy.ifRollbackUnsafe,
+            params: { failed_step: step.id },
+          },
+        ];
+      }
+
+      function stableId(namespace, name) {
+        const source = `${namespace}:${name}`;
+        let hash = 0;
+        for (let index = 0; index < source.length; index += 1) {
+          hash = (hash * 31 + source.charCodeAt(index)) >>> 0;
+        }
+        return `00000000-0000-4000-8000-${hash.toString(16).padStart(12, "0")}`;
+      }
+
+      function valueOr(value, fallback) {
+        return value && value.trim() ? value.trim() : fallback;
+      }
+
+      function escapeHtml(value) {
+        return String(value || "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      elements.addStep.addEventListener("click", () => {
+        state.steps.push({
+          id: `step_${state.steps.length + 1}`,
+          handler: "handler_name",
+          undo: "",
+          retry: false,
+          guard: "",
+          fallback: "",
+          decision: false,
+        });
+        render();
+      });
+
+      for (const element of [elements.operationName, elements.namespace, elements.onFailure, elements.ifRollbackUnsafe]) {
+        element.addEventListener("input", renderOutput);
+      }
+
+      elements.tabOperation.addEventListener("click", () => {
+        state.tab = "operation";
+        elements.tabOperation.classList.add("active");
+        elements.tabWorkflow.classList.remove("active");
+        renderOutput();
+      });
+
+      elements.tabWorkflow.addEventListener("click", () => {
+        state.tab = "workflow";
+        elements.tabWorkflow.classList.add("active");
+        elements.tabOperation.classList.remove("active");
+        renderOutput();
+      });
+
+      render();
+    </script>
+  </body>
+</html>

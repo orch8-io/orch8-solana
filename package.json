@@ -1,0 +1,20 @@
+{
+  "name": "orch8-solana",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "demo:frontier": "npm run demo:run && npm run validate:workflows",
+    "demo:build-workflow": "npm run build && node dist/demo/recoverable-migration/src/build-workflow.js",
+    "demo:run": "npm run build && node dist/demo/recoverable-migration/src/run-demo.js",
+    "validate:workflows": "npm run build && npm run demo:build-workflow && node dist/scripts/validate-workflows.js",
+    "worker:start": "npm run build && node dist/packages/solana-worker/src/server.js",
+    "engine:start": "mkdir -p var && ./bin/darwin-arm64/orch8-server --config orch8.toml --insecure"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "tsx": "^4.19.4",
+    "typescript": "^5.4.5"
+  }
+}

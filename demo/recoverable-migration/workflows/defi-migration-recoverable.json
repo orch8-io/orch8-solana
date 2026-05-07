@@ -1,0 +1,263 @@
+{
+  "id": "f6914a7e-cdfb-41c6-8062-f8a1c15f87af",
+  "tenant_id": "default",
+  "name": "defi_migration_recoverable",
+  "namespace": "solana_demo",
+  "version": 1,
+  "created_at": "2026-05-07T00:00:00Z",
+  "blocks": [
+    {
+      "type": "try_catch",
+      "id": "withdraw_collateral_recoverable",
+      "try_block": [
+        {
+          "type": "step",
+          "id": "withdraw_collateral_guard_asset_owner",
+          "handler": "check_asset_owner",
+          "params": {
+            "asset": "collateral"
+          }
+        },
+        {
+          "type": "step",
+          "id": "withdraw_collateral_guard_withdrawable_balance",
+          "handler": "check_withdrawable_balance",
+          "params": {
+            "minimum_collateral": 100
+          }
+        },
+        {
+          "type": "step",
+          "id": "withdraw_collateral",
+          "handler": "withdraw_collateral",
+          "retry": {
+            "max_attempts": 3,
+            "initial_backoff": 1000,
+            "max_backoff": 5000,
+            "backoff_multiplier": 2
+          }
+        }
+      ],
+      "catch_block": [
+        {
+          "type": "step",
+          "id": "withdraw_collateral_park_assets",
+          "handler": "park_assets",
+          "params": {
+            "failed_step": "withdraw_collateral"
+          }
+        }
+      ]
+    },
+    {
+      "type": "try_catch",
+      "id": "claim_rewards_recoverable",
+      "try_block": [
+        {
+          "type": "step",
+          "id": "claim_rewards",
+          "handler": "claim_rewards"
+        }
+      ],
+      "catch_block": [
+        {
+          "type": "step",
+          "id": "claim_rewards_undo_withdraw_collateral",
+          "handler": "redeposit_collateral",
+          "params": {
+            "original_step": "withdraw_collateral"
+          }
+        }
+      ]
+    },
+    {
+      "type": "try_catch",
+      "id": "swap_rewards_recoverable",
+      "try_block": [
+        {
+          "type": "step",
+          "id": "swap_rewards",
+          "handler": "swap_rewards_to_usdc",
+          "retry": {
+            "max_attempts": 2,
+            "initial_backoff": 1000,
+            "max_backoff": 5000,
+            "backoff_multiplier": 2
+          },
+          "params": {
+            "failure_examples": [
+              {
+                "code": "blockhash_not_found",
+                "kind": "transient",
+                "recovery": "rollback",
+                "note": "Retry while quote is still fresh, otherwise ask the user."
+              },
+              {
+                "code": "slippage_exceeded",
+                "kind": "market_moved",
+                "recovery": "ask_user",
+                "note": "The expected route changed and may no longer match the user's intent."
+              },
+              {
+                "code": "user_timeout",
+                "kind": "user_timeout",
+                "recovery": "park_assets",
+                "note": "Avoid leaving assets idle while waiting for input."
+              }
+            ]
+          }
+        }
+      ],
+      "catch_block": [
+        {
+          "type": "step",
+          "id": "swap_rewards_classify_failure",
+          "handler": "classify_solana_failure",
+          "params": {
+            "failed_step": "swap_rewards",
+            "examples": [
+              {
+                "code": "blockhash_not_found",
+                "kind": "transient",
+                "recovery": "rollback",
+                "note": "Retry while quote is still fresh, otherwise ask the user."
+              },
+              {
+                "code": "slippage_exceeded",
+                "kind": "market_moved",
+                "recovery": "ask_user",
+                "note": "The expected route changed and may no longer match the user's intent."
+              },
+              {
+                "code": "user_timeout",
+                "kind": "user_timeout",
+                "recovery": "park_assets",
+                "note": "Avoid leaving assets idle while waiting for input."
+              }
+            ]
+          }
+        },
+        {
+          "type": "step",
+          "id": "swap_rewards_ask_user",
+          "handler": "ask_user",
+          "params": {
+            "failed_step": "swap_rewards",
+            "question": "Swap route failed. Retry, roll back, park assets, or wait?",
+            "choices": [
+              "retry",
+              "rollback",
+              "park_assets",
+              "wait"
+            ],
+            "default": "park_assets",
+            "timeout_seconds": 300,
+            "on_timeout": "park_assets"
+          }
+        }
+      ]
+    },
+    {
+      "type": "try_catch",
+      "id": "deposit_protocol_b_recoverable",
+      "try_block": [
+        {
+          "type": "step",
+          "id": "deposit_protocol_b_guard_protocol_capacity",
+          "handler": "check_protocol_capacity",
+          "params": {
+            "protocol": "protocol_b"
+          }
+        },
+        {
+          "type": "step",
+          "id": "deposit_protocol_b",
+          "handler": "deposit_protocol_b",
+          "retry": {
+            "max_attempts": 3,
+            "initial_backoff": 5000,
+            "max_backoff": 30000,
+            "backoff_multiplier": 2
+          },
+          "params": {
+            "failure_examples": [
+              {
+                "code": "priority_fee_too_low",
+                "kind": "transient",
+                "recovery": "rollback",
+                "note": "Retry with a higher fee while the destination is still safe."
+              },
+              {
+                "code": "protocol_capacity_full",
+                "kind": "capacity",
+                "recovery": "park_assets",
+                "note": "Park collateral until capacity opens or the user chooses another destination."
+              }
+            ]
+          }
+        }
+      ],
+      "catch_block": [
+        {
+          "type": "step",
+          "id": "deposit_protocol_b_classify_failure",
+          "handler": "classify_solana_failure",
+          "params": {
+            "failed_step": "deposit_protocol_b",
+            "examples": [
+              {
+                "code": "priority_fee_too_low",
+                "kind": "transient",
+                "recovery": "rollback",
+                "note": "Retry with a higher fee while the destination is still safe."
+              },
+              {
+                "code": "protocol_capacity_full",
+                "kind": "capacity",
+                "recovery": "park_assets",
+                "note": "Park collateral until capacity opens or the user chooses another destination."
+              }
+            ]
+          }
+        },
+        {
+          "type": "step",
+          "id": "deposit_protocol_b_fallback",
+          "handler": "park_assets",
+          "params": {
+            "failed_step": "deposit_protocol_b"
+          }
+        }
+      ]
+    },
+    {
+      "type": "try_catch",
+      "id": "enable_leverage_recoverable",
+      "try_block": [
+        {
+          "type": "step",
+          "id": "enable_leverage",
+          "handler": "enable_leverage"
+        }
+      ],
+      "catch_block": [
+        {
+          "type": "step",
+          "id": "enable_leverage_undo_swap_rewards",
+          "handler": "swap_usdc_to_rewards",
+          "params": {
+            "original_step": "swap_rewards"
+          }
+        },
+        {
+          "type": "step",
+          "id": "enable_leverage_undo_withdraw_collateral",
+          "handler": "redeposit_collateral",
+          "params": {
+            "original_step": "withdraw_collateral"
+          }
+        }
+      ]
+    }
+  ]
+}

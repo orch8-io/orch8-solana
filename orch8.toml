@@ -1,0 +1,23 @@
+[database]
+backend = "sqlite"
+url = "var/orch8-solana.db"
+max_connections = 16
+run_migrations = true
+
+[engine]
+tick_interval_ms = 100
+batch_size = 64
+max_concurrent_steps = 32
+shutdown_grace_period_secs = 10
+stale_instance_threshold_secs = 60
+
+[api]
+http_addr = "127.0.0.1:8080"
+grpc_addr = "127.0.0.1:50051"
+cors_origins = "*"
+require_tenant_header = false
+max_concurrent_requests = 0
+
+[logging]
+level = "info"
+json = false

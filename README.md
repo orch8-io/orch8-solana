@@ -9,6 +9,7 @@ This repository contains:
 - `demo/constructor-ui`: static browser constructor for sketching recoverable operation sequences.
 - `demo/recoverable-migration`: a Frontier Hackathon demo showing a DeFi position migration that fails halfway and recovers.
 - `docs/crypto/autodao-expansion.md`: DAO treasury expansion example for after the primary demo.
+- `docs/crypto/demo-evidence.md`: proof transcript, claims proven, and recording placeholder.
 - `docs/crypto/frontier-demo.md`: submission script, terminal output, and one-command demo path.
 - `docs/crypto/multistep-flow-opportunities.md`: painful multi-step Solana flow examples and positioning.
 - `docs/crypto/recovery-patterns.md`: guard checks, failure classification, and user decision timeout patterns.
@@ -72,7 +73,7 @@ The demo is intentionally small:
 3. the recovery branch parks assets instead of leaving the user in an idle partial state,
 4. the generated workflow JSON is validated against a local engine.
 
-Recording notes and expected terminal output live in [Frontier demo](docs/crypto/frontier-demo.md).
+Recording notes and expected terminal output live in [Frontier demo](docs/crypto/frontier-demo.md). The proof transcript lives in [Demo evidence](docs/crypto/demo-evidence.md).
 
 ## Local Binaries
 
@@ -203,6 +204,7 @@ The primary painful flow is position migration because it naturally demonstrates
 For more examples, see:
 
 - [Frontier demo](docs/crypto/frontier-demo.md)
+- [Demo evidence](docs/crypto/demo-evidence.md)
 - [AutoDAO expansion](docs/crypto/autodao-expansion.md)
 - [Multi-step flow opportunities](docs/crypto/multistep-flow-opportunities.md)
 - [Recovery patterns](docs/crypto/recovery-patterns.md)

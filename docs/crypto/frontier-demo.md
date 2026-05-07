@@ -19,6 +19,8 @@ The command runs the deterministic migration demo, regenerates the workflow JSON
 
 No live network dependency is required.
 
+The proof transcript and recording placeholder are in [Demo evidence](demo-evidence.md).
+
 ## Demo Output
 
 Expected terminal shape:

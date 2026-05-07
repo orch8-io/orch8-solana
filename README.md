@@ -45,8 +45,10 @@ Useful smaller commands:
 
 ```bash
 npm run build
+npm run check
 npm run demo:run
 npm run demo:build-workflow
+npm run validate:constructor
 npm run validate:workflows
 ```
 

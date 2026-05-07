@@ -1,6 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { spawn, type ChildProcess } from "node:child_process";
 import {
   Connection,
@@ -12,13 +13,20 @@ import {
 
 const rpcUrl = "http://127.0.0.1:8899";
 
-async function main(): Promise<void> {
+export interface LocalSolanaProof {
+  payer: string;
+  receiver: string;
+  signature: string;
+  receiverLamports: number;
+}
+
+export async function runLocalSolanaProof(): Promise<LocalSolanaProof> {
   const ledgerDir = mkdtempSync(join(tmpdir(), "orch8-solana-validator-"));
   const validator = startValidator(ledgerDir);
 
   try {
     await waitForValidator(validator);
-    await runTransferProof();
+    return await runTransferProof();
   } finally {
     validator.kill("SIGTERM");
     await waitForExit(validator);
@@ -83,7 +91,7 @@ async function waitForValidator(validator: ChildProcess): Promise<void> {
   );
 }
 
-async function runTransferProof(): Promise<void> {
+async function runTransferProof(): Promise<LocalSolanaProof> {
   const connection = new Connection(rpcUrl, "confirmed");
   const payer = Keypair.generate();
   const receiver = Keypair.generate();
@@ -128,11 +136,12 @@ async function runTransferProof(): Promise<void> {
     throw new Error("Expected payer balance to decrease after transfer and fee");
   }
 
-  console.log("Local Solana validation passed");
-  console.log(`payer=${payer.publicKey.toBase58()}`);
-  console.log(`receiver=${receiver.publicKey.toBase58()}`);
-  console.log(`signature=${transferSignature}`);
-  console.log(`receiver_lamports=${receiverAfter}`);
+  return {
+    payer: payer.publicKey.toBase58(),
+    receiver: receiver.publicKey.toBase58(),
+    signature: transferSignature,
+    receiverLamports: receiverAfter,
+  };
 }
 
 function sleep(ms: number): Promise<void> {
@@ -170,7 +179,18 @@ function waitForExit(child: ChildProcess): Promise<void> {
   });
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+async function main(): Promise<void> {
+  const proof = await runLocalSolanaProof();
+  console.log("Local Solana validation passed");
+  console.log(`payer=${proof.payer}`);
+  console.log(`receiver=${proof.receiver}`);
+  console.log(`signature=${proof.signature}`);
+  console.log(`receiver_lamports=${proof.receiverLamports}`);
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
+}

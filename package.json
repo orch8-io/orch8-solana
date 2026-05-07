@@ -7,6 +7,7 @@
     "build": "tsc -p tsconfig.json",
     "check": "npm run build && npm run validate:constructor && npm run validate:local-solana && npm run validate:workflows",
     "demo:frontier": "npm run demo:run && npm run validate:workflows",
+    "demo:solana-wow": "npm run build && node dist/scripts/run-solana-wow-demo.js",
     "demo:build-workflow": "npm run build && node dist/demo/recoverable-migration/src/build-workflow.js",
     "demo:build-workflow:verbose": "npm run build && node dist/demo/recoverable-migration/src/build-workflow.js --verbose",
     "demo:run": "npm run build && node dist/demo/recoverable-migration/src/run-demo.js",

@@ -14,6 +14,7 @@ This repository contains:
 - `docs/crypto/multistep-flow-opportunities.md`: painful multi-step Solana flow examples and positioning.
 - `docs/crypto/recovery-patterns.md`: guard checks, failure classification, and user decision timeout patterns.
 - `docs/crypto/flow-templates.md`: yield rebalancing and liquidation protection constructor templates.
+- `docs/crypto/wow-demo.md`: committee-facing local Solana proof command.
 - `docs/crypto/post-hackathon-hn-outline.md`: post-hackathon writing outline.
 - `docs/crypto/action-points.md`: prioritized implementation checklist.
 
@@ -47,6 +48,7 @@ Useful smaller commands:
 ```bash
 npm run build
 npm run check
+npm run demo:solana-wow
 npm run demo:run
 npm run demo:build-workflow
 npm run demo:build-workflow:verbose
@@ -75,6 +77,12 @@ The demo is intentionally small:
 4. the generated workflow JSON is validated against a local engine.
 
 Recording notes and expected terminal output live in [Frontier demo](docs/crypto/frontier-demo.md). The proof transcript lives in [Demo evidence](docs/crypto/demo-evidence.md).
+
+The committee-facing proof command is:
+
+```bash
+npm run demo:solana-wow
+```
 
 ## Local Binaries
 
@@ -211,6 +219,7 @@ For more examples, see:
 - [Multi-step flow opportunities](docs/crypto/multistep-flow-opportunities.md)
 - [Recovery patterns](docs/crypto/recovery-patterns.md)
 - [Flow templates](docs/crypto/flow-templates.md)
+- [Solana wow demo](docs/crypto/wow-demo.md)
 - [Post-hackathon HN outline](docs/crypto/post-hackathon-hn-outline.md)
 - [Action points](docs/crypto/action-points.md)
 

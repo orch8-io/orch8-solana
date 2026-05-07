@@ -21,6 +21,12 @@ npm run validate:local-solana
 
 That command starts `solana-test-validator`, requests an airdrop, transfers lamports, confirms the transaction, checks balances, and shuts the validator down.
 
+For the committee-facing combined proof:
+
+```bash
+npm run demo:solana-wow
+```
+
 ## Recording Placeholder
 
 Add the recording or GIF here after capture:

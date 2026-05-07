@@ -51,6 +51,7 @@ npm run demo:run
 npm run demo:build-workflow
 npm run demo:build-workflow:verbose
 npm run validate:constructor
+npm run validate:local-solana
 npm run validate:workflows
 ```
 
@@ -177,12 +178,13 @@ Real:
 - generated orch8 workflow shape,
 - explicit forward/reverse/recovery handlers,
 - deterministic failure and recovery state model.
+- local Solana validator smoke test with airdrop, transfer, confirmation, and balance checks.
 
 Mocked for the hackathon demo:
 
 - protocol balances,
 - Protocol B capacity,
-- Solana transaction effects,
+- DeFi protocol transaction effects,
 - money market parking.
 
 ## Frontier Demo Story

@@ -13,6 +13,14 @@ npm run demo:frontier
 
 The command runs the migration demo, regenerates workflow JSON, starts a temporary local engine, and validates both generated workflows.
 
+For a local-chain smoke test:
+
+```bash
+npm run validate:local-solana
+```
+
+That command starts `solana-test-validator`, requests an airdrop, transfers lamports, confirms the transaction, checks balances, and shuts the validator down.
+
 ## Recording Placeholder
 
 Add the recording or GIF here after capture:
@@ -91,6 +99,16 @@ Validated demo/recoverable-migration/workflows/defi-migration-unprotected.json
 Validated demo/recoverable-migration/workflows/defi-migration-recoverable.json
 ```
 
+### 4. Local Solana runtime is reachable
+
+The local Solana smoke test proves the repo can connect to a real validator process:
+
+```text
+Local Solana validation passed
+signature=<local-validator-transaction-signature>
+receiver_lamports=100000000
+```
+
 ## What To Show First
 
 Lead with the state contrast:
@@ -99,6 +117,12 @@ Lead with the state contrast:
 | --- | --- | --- |
 | Unprotected | Protocol B full | idle in wallet |
 | Recoverable | Protocol B full | parked in money market |
+
+Also show the local-chain proof:
+
+```bash
+npm run validate:local-solana
+```
 
 Then show that this behavior comes from the constructor:
 

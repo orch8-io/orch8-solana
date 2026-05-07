@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "check": "npm run build && npm run validate:constructor && npm run validate:workflows",
+    "check": "npm run build && npm run validate:constructor && npm run validate:local-solana && npm run validate:workflows",
     "demo:frontier": "npm run demo:run && npm run validate:workflows",
     "demo:build-workflow": "npm run build && node dist/demo/recoverable-migration/src/build-workflow.js",
     "demo:build-workflow:verbose": "npm run build && node dist/demo/recoverable-migration/src/build-workflow.js --verbose",
     "demo:run": "npm run build && node dist/demo/recoverable-migration/src/run-demo.js",
     "validate:constructor": "npm run build && node dist/scripts/validate-constructor.js",
+    "validate:local-solana": "npm run build && node dist/scripts/validate-local-solana.js",
     "validate:workflows": "npm run build && npm run demo:build-workflow && node dist/scripts/validate-workflows.js",
     "worker:start": "npm run build && node dist/packages/solana-worker/src/server.js",
     "engine:start": "mkdir -p var && ./bin/darwin-arm64/orch8-server --config orch8.toml --insecure"
@@ -19,5 +20,8 @@
     "@types/node": "^20.12.12",
     "tsx": "^4.19.4",
     "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.98.4"
   }
 }

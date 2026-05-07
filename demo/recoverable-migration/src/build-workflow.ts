@@ -145,6 +145,7 @@ const operation: RecoverableOperation = solTransaction({
 
 const recoverableWorkflow = recoverableOperation(operation);
 const recoveryPath = describeRecoveryPath(operation);
+const verbose = process.argv.includes("--verbose") || process.env.ORCH8_VERBOSE === "1";
 
 const workflowDir = resolve(process.cwd(), "demo/recoverable-migration/workflows");
 mkdirSync(workflowDir, { recursive: true });
@@ -185,7 +186,10 @@ writeFileSync(
   `# Recoverable Migration Path\n\n${recoveryPath.text}\n\`\`\`mermaid\n${recoveryPath.mermaid}\`\`\`\n`,
 );
 
-console.log(JSON.stringify(recoverableWorkflow, null, 2));
-console.error(`\nWrote ${recoverablePath}`);
+if (verbose) {
+  console.log(JSON.stringify(recoverableWorkflow, null, 2));
+}
+
+console.error(`Wrote ${recoverablePath}`);
 console.error(`Wrote ${unprotectedPath}`);
 console.error(`Wrote ${recoveryPathPath}`);

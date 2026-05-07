@@ -53,6 +53,7 @@ npm run demo:run
 npm run demo:build-workflow
 npm run demo:build-workflow:verbose
 npm run validate:constructor
+npm run validate:worker-http
 npm run validate:local-solana
 npm run validate:workflows
 ```
@@ -186,6 +187,7 @@ Real:
 - generated orch8 workflow shape,
 - explicit forward/reverse/recovery handlers,
 - deterministic failure and recovery state model.
+- HTTP worker validation through `/reset`, `/handlers/*`, and `/state`.
 - local Solana validator smoke test with airdrop, transfer, confirmation, and balance checks.
 
 Mocked for the hackathon demo:

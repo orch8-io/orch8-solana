@@ -21,6 +21,14 @@ npm run validate:local-solana
 
 That command starts `solana-test-validator`, requests an airdrop, transfers lamports, confirms the transaction, checks balances, and shuts the validator down.
 
+For the worker HTTP proof:
+
+```bash
+npm run validate:worker-http
+```
+
+That command starts the mock worker, calls `/reset`, drives the migration through `/handlers/*`, confirms the expected Protocol B failure, parks assets through HTTP, and verifies `/state`.
+
 For the committee-facing combined proof:
 
 ```bash

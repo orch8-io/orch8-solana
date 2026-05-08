@@ -52,6 +52,7 @@ npm run demo:solana-wow
 npm run demo:run
 npm run demo:build-workflow
 npm run demo:build-workflow:verbose
+npm run smoke:fresh-clone
 npm run validate:constructor
 npm run validate:worker-http
 npm run validate:local-solana
@@ -186,7 +187,7 @@ Real:
 - recoverable operation construction,
 - generated orch8 workflow shape,
 - explicit forward/reverse/recovery handlers,
-- deterministic failure and recovery state model.
+- deterministic failure and recovery state model,
 - HTTP worker validation through `/reset`, `/handlers/*`, and `/state`.
 - local Solana validator smoke test with airdrop, transfer, confirmation, and balance checks.
 

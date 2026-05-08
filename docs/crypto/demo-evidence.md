@@ -35,6 +35,14 @@ For the committee-facing combined proof:
 npm run demo:solana-wow
 ```
 
+For a clean checkout proof:
+
+```bash
+npm run smoke:fresh-clone
+```
+
+That command clones the repo into a temporary directory, installs dependencies, runs `npm run check`, runs `npm run demo:solana-wow`, and removes the temporary directory.
+
 ## Recording Placeholder
 
 Add the recording or GIF here after capture:

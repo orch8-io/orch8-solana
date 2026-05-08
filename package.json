@@ -11,6 +11,7 @@
     "demo:build-workflow": "npm run build && node dist/demo/recoverable-migration/src/build-workflow.js",
     "demo:build-workflow:verbose": "npm run build && node dist/demo/recoverable-migration/src/build-workflow.js --verbose",
     "demo:run": "npm run build && node dist/demo/recoverable-migration/src/run-demo.js",
+    "smoke:fresh-clone": "scripts/smoke-fresh-clone.sh",
     "validate:constructor": "npm run build && node dist/scripts/validate-constructor.js",
     "validate:worker-http": "npm run build && node dist/scripts/validate-worker-http.js",
     "validate:local-solana": "npm run build && node dist/scripts/validate-local-solana.js",

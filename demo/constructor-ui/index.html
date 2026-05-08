@@ -106,6 +106,10 @@
         font: 13px/1.5 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
       }
 
+      .hidden {
+        display: none;
+      }
+
       .app {
         display: grid;
         grid-template-rows: auto 1fr;
@@ -274,6 +278,164 @@
         color: var(--blue);
       }
 
+      .flow-view {
+        overflow: auto;
+        min-height: 520px;
+        max-height: 72vh;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background:
+          linear-gradient(rgba(44, 98, 163, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(44, 98, 163, 0.05) 1px, transparent 1px),
+          #fbfbf7;
+        background-size: 24px 24px;
+        padding: 18px;
+      }
+
+      .flow-board {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) 96px minmax(220px, 1fr);
+        gap: 12px 16px;
+        align-items: stretch;
+        min-width: 760px;
+      }
+
+      .flow-step,
+      .flow-branch,
+      .flow-legend {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .flow-step {
+        display: grid;
+        gap: 10px;
+        padding: 12px;
+      }
+
+      .flow-step-head,
+      .flow-branch-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: flex-start;
+      }
+
+      .flow-step-title,
+      .flow-branch-title {
+        min-width: 0;
+        font-size: 13px;
+        font-weight: 780;
+        overflow-wrap: anywhere;
+      }
+
+      .flow-index {
+        display: inline-grid;
+        place-items: center;
+        flex: 0 0 auto;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: var(--green);
+        color: #ffffff;
+        font-size: 12px;
+        font-weight: 750;
+      }
+
+      .flow-handler,
+      .flow-branch-body {
+        color: var(--muted);
+        font: 12px/1.45 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        overflow-wrap: anywhere;
+      }
+
+      .flow-tags,
+      .flow-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .flow-tag {
+        min-height: 24px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 3px 8px;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 650;
+      }
+
+      .flow-tag.retry {
+        border-color: rgba(44, 98, 163, 0.35);
+        color: var(--blue);
+      }
+
+      .flow-tag.undo {
+        border-color: rgba(30, 125, 91, 0.35);
+        color: var(--green);
+      }
+
+      .flow-tag.guard {
+        border-color: rgba(155, 107, 31, 0.38);
+        color: var(--amber);
+      }
+
+      .flow-connector {
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .flow-connector::before {
+        content: "";
+        display: block;
+        width: 100%;
+        height: 2px;
+        background: var(--line);
+      }
+
+      .flow-branch {
+        display: grid;
+        align-content: start;
+        gap: 8px;
+        padding: 12px;
+      }
+
+      .flow-branch.decision {
+        border-left: 4px solid var(--blue);
+      }
+
+      .flow-branch.fallback {
+        border-left: 4px solid var(--amber);
+      }
+
+      .flow-branch.rollback {
+        border-left: 4px solid var(--green);
+      }
+
+      .flow-branch.stop {
+        border-left: 4px solid var(--red);
+      }
+
+      .flow-legend {
+        grid-column: 1 / -1;
+        align-items: center;
+        padding: 10px 12px;
+        color: var(--muted);
+        font-size: 12px;
+        box-shadow: none;
+      }
+
+      .flow-legend strong {
+        color: var(--text);
+      }
+
       .metric-row {
         display: grid;
         grid-template-columns: repeat(4, minmax(120px, 1fr));
@@ -349,7 +511,7 @@
 
         .tabs {
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: 1fr 1fr 1fr;
         }
 
         .tab {
@@ -412,6 +574,7 @@
             <div class="tabs" role="tablist" aria-label="Output tabs">
               <button class="tab active" id="tabOperation" type="button">Operation</button>
               <button class="tab" id="tabWorkflow" type="button">Workflow</button>
+              <button class="tab" id="tabFlow" type="button">Flow</button>
             </div>
             <div class="metric-row" aria-label="Operation summary">
               <div class="metric"><span class="metric-value" id="stepCount">0</span><span class="metric-label">steps</span></div>
@@ -420,6 +583,7 @@
               <div class="metric"><span class="metric-value" id="decisionCount">0</span><span class="metric-label">decisions</span></div>
             </div>
           </div>
+          <div class="flow-view hidden" id="flowView" aria-live="polite"></div>
           <pre id="output" aria-live="polite"></pre>
         </section>
       </main>
@@ -470,6 +634,8 @@
         statusText: document.getElementById("statusText"),
         tabOperation: document.getElementById("tabOperation"),
         tabWorkflow: document.getElementById("tabWorkflow"),
+        tabFlow: document.getElementById("tabFlow"),
+        flowView: document.getElementById("flowView"),
         stepCount: document.getElementById("stepCount"),
         guardCount: document.getElementById("guardCount"),
         rollbackCount: document.getElementById("rollbackCount"),
@@ -491,14 +657,110 @@
       function renderOutput() {
         const operation = buildOperation();
         const workflow = buildWorkflow(operation);
-        const output = state.tab === "operation" ? operation : workflow;
-        elements.output.textContent = JSON.stringify(output, null, 2);
+        const showFlow = state.tab === "flow";
+
+        elements.output.classList.toggle("hidden", showFlow);
+        elements.flowView.classList.toggle("hidden", !showFlow);
+
+        if (showFlow) {
+          elements.flowView.innerHTML = renderFlow(operation);
+        } else {
+          const output = state.tab === "operation" ? operation : workflow;
+          elements.output.textContent = JSON.stringify(output, null, 2);
+        }
 
         elements.stepCount.textContent = String(state.steps.length);
         elements.guardCount.textContent = String(state.steps.filter((step) => step.guard).length);
         elements.rollbackCount.textContent = String(state.steps.filter((step) => step.undo).length);
         elements.decisionCount.textContent = String(state.steps.filter((step) => step.decision).length);
         elements.statusText.textContent = `${operation.name} ready`;
+      }
+
+      function renderFlow(operation) {
+        const reversible = [];
+        const rows = operation.steps.map((step, index) => {
+          const branch = recoveryBranch(step, reversible, operation.recoveryPolicy);
+          if (step.undo) reversible.push(step);
+
+          return `
+            <article class="flow-step">
+              <div class="flow-step-head">
+                <div class="flow-step-title">${escapeHtml(step.id)}</div>
+                <span class="flow-index">${index + 1}</span>
+              </div>
+              <div class="flow-handler">${escapeHtml(step.do)}</div>
+              <div class="flow-tags">
+                ${step.retry ? '<span class="flow-tag retry">retry x3</span>' : ""}
+                ${step.undo ? `<span class="flow-tag undo">undo: ${escapeHtml(step.undo)}</span>` : ""}
+                ${(step.guards || []).map((guard) => `<span class="flow-tag guard">guard: ${escapeHtml(guard.handler)}</span>`).join("")}
+              </div>
+            </article>
+            <div class="flow-connector" aria-hidden="true"></div>
+            ${branch}
+          `;
+        });
+
+        return `
+          <div class="flow-board">
+            <div class="flow-legend">
+              <strong>Happy path</strong>
+              <span>Step order runs top to bottom.</span>
+              <strong>Recovery</strong>
+              <span>Right side shows what happens when that step fails.</span>
+            </div>
+            ${rows.join("")}
+          </div>
+        `;
+      }
+
+      function recoveryBranch(step, reversible, policy) {
+        if (step.userDecision) {
+          return `
+            <article class="flow-branch decision">
+              <div class="flow-branch-head">
+                <div class="flow-branch-title">Ask user</div>
+                <span class="flow-tag retry">decision</span>
+              </div>
+              <div class="flow-branch-body">${escapeHtml(step.userDecision.choices.join(" | "))}</div>
+              <div class="flow-branch-body">timeout: ${escapeHtml(step.userDecision.onTimeout)}</div>
+            </article>
+          `;
+        }
+
+        if (step.fallback) {
+          return `
+            <article class="flow-branch fallback">
+              <div class="flow-branch-head">
+                <div class="flow-branch-title">Fallback</div>
+                <span class="flow-tag guard">asset safety</span>
+              </div>
+              <div class="flow-branch-body">${escapeHtml(step.fallback)}</div>
+            </article>
+          `;
+        }
+
+        if (policy.onFailure === "rollback" && reversible.length > 0) {
+          const undoHandlers = [...reversible].reverse().map((completed) => completed.undo).join(" -> ");
+          return `
+            <article class="flow-branch rollback">
+              <div class="flow-branch-head">
+                <div class="flow-branch-title">Rollback</div>
+                <span class="flow-tag undo">${reversible.length} undo</span>
+              </div>
+              <div class="flow-branch-body">${escapeHtml(undoHandlers)}</div>
+            </article>
+          `;
+        }
+
+        return `
+          <article class="flow-branch stop">
+            <div class="flow-branch-head">
+              <div class="flow-branch-title">Policy</div>
+              <span class="flow-tag">${escapeHtml(policy.ifRollbackUnsafe)}</span>
+            </div>
+            <div class="flow-branch-body">${escapeHtml(policy.ifRollbackUnsafe)}</div>
+          </article>
+        `;
       }
 
       function stepElement(step, index) {
@@ -727,18 +989,26 @@
       }
 
       elements.tabOperation.addEventListener("click", () => {
-        state.tab = "operation";
-        elements.tabOperation.classList.add("active");
-        elements.tabWorkflow.classList.remove("active");
+        setTab("operation");
         renderOutput();
       });
 
       elements.tabWorkflow.addEventListener("click", () => {
-        state.tab = "workflow";
-        elements.tabWorkflow.classList.add("active");
-        elements.tabOperation.classList.remove("active");
+        setTab("workflow");
         renderOutput();
       });
+
+      elements.tabFlow.addEventListener("click", () => {
+        setTab("flow");
+        renderOutput();
+      });
+
+      function setTab(tab) {
+        state.tab = tab;
+        elements.tabOperation.classList.toggle("active", tab === "operation");
+        elements.tabWorkflow.classList.toggle("active", tab === "workflow");
+        elements.tabFlow.classList.toggle("active", tab === "flow");
+      }
 
       render();
     </script>

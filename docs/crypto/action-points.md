@@ -79,7 +79,7 @@ Acceptance criteria:
 
 ## Nice To Have
 
-- [x] Add a minimal browser constructor UI.
+- [x] Add a minimal browser constructor UI with a visual flow view.
 - [x] Add flow templates for yield rebalancing and liquidation protection.
 - [x] Add AutoDAO treasury rebalancing as the least-priority expansion example.
 - [x] Add failure classification examples for blockhash expiry, priority fee, slippage, capacity, and user timeout.

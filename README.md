@@ -6,7 +6,7 @@ This repository contains:
 
 - `packages/recoverable-operation-builder`: a friendly TypeScript constructor that turns reversible Solana operation definitions into orch8 workflow JSON.
 - `packages/solana-worker`: mockable Solana worker handlers for transaction lifecycle, balance checks, failure classification, and recovery actions.
-- `demo/constructor-ui`: static browser constructor for sketching recoverable operation sequences.
+- `demo/constructor-ui`: static browser constructor for sketching recoverable operation sequences and visual recovery flows.
 - `demo/recoverable-migration`: a Frontier Hackathon demo showing a DeFi position migration that fails halfway and recovers.
 - `docs/crypto/autodao-expansion.md`: DAO treasury expansion example for after the primary demo.
 - `docs/crypto/demo-evidence.md`: proof transcript, claims proven, and recording placeholder.
@@ -59,7 +59,7 @@ npm run validate:local-solana
 npm run validate:workflows
 ```
 
-The static constructor UI is at `demo/constructor-ui/index.html`.
+The static constructor UI is at `demo/constructor-ui/index.html`. It can show the operation JSON, generated workflow JSON, and a visual flow of the happy path plus recovery branches.
 
 ## Frontier Demo
 

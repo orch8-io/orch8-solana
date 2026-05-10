@@ -6,26 +6,59 @@ The core opportunity is to position orch8 around recoverable DeFi operations, no
 
 Solana gives developers atomic transactions. It does not automatically recover a user's broader intent when a workflow spans several transactions, protocols, quotes, confirmations, and off-chain services. That gap is where orch8 fits.
 
+```mermaid
+flowchart LR
+  subgraph solana ["What Solana gives you"]
+    TX["Atomic\nTransaction"]
+  end
+
+  subgraph gap ["The gap"]
+    OP["Multi-step\nOperation"]
+    OP --- |"spans"| T1["TX 1"]
+    OP --- |"spans"| T2["TX 2"]
+    OP --- |"spans"| T3["TX 3"]
+    OP --- |"spans"| T4["TX 4 ❌"]
+  end
+
+  subgraph orch8 ["What orch8 adds"]
+    REC["Recoverable\nOperation"]
+    REC -->|"retry"| A1["Transient fix"]
+    REC -->|"rollback"| A2["Undo completed"]
+    REC -->|"park"| A3["Safe holding"]
+    REC -->|"ask user"| A4["Human decision"]
+  end
+
+  solana ~~~ gap ~~~ orch8
+
+  style TX fill:#d4edda,stroke:#198754,color:#333
+  style T4 fill:#ffcccc,stroke:#cc0000,color:#333
+  style REC fill:#cce5ff,stroke:#0d6efd,color:#333
+```
+
 ## Best Demo Anchor: Recoverable Position Migration
 
 Use position migration as the primary Frontier demo because it is concrete, financially meaningful, and naturally exercises the recoverable operation abstraction.
 
-Typical flow:
+```mermaid
+flowchart TB
+  W["1. Withdraw collateral\nfrom Protocol A"] --> C["2. Claim rewards"]
+  C --> S["3. Swap rewards\nor debt asset"]
+  S --> D["4. Deposit collateral\ninto Protocol B"]
+  D --> L["5. Reopen borrow\nor enable leverage"]
 
-1. Withdraw collateral from Protocol A.
-2. Claim rewards.
-3. Swap rewards or debt asset.
-4. Deposit collateral into Protocol B.
-5. Reopen borrow or enable leverage.
+  D -.-x|"❌ fails here"| FAIL["Capacity · Stale state\nSlippage · Account locks\nPriority-fee conditions"]
 
-Painful failure:
+  FAIL --> Q{"What should\nhappen?"}
+  Q -->|"Wait?"| Q1["⏳"]
+  Q -->|"Go back?"| Q2["↩️"]
+  Q -->|"Park assets?"| Q3["🏦"]
+  Q -->|"New destination?"| Q4["🔀"]
 
-- The first three steps succeed.
-- Protocol B deposit fails because of capacity, stale state, slippage, account locks, or priority-fee conditions.
-- The user's assets are now idle or in the wrong risk position.
-- The chain cannot infer whether the user wanted to wait, go back, park assets, or choose a different destination.
+  style FAIL fill:#ffcccc,stroke:#cc0000,color:#333
+  style D fill:#fff3cd,stroke:#ffc107,color:#333
+```
 
-orch8 story:
+The chain cannot infer the user's intent. orch8 makes the recovery explicit:
 
 - Retry transient failures.
 - Run reverse handlers for completed reversible steps.
@@ -250,6 +283,23 @@ Positioning:
 > After DeFi recovery is proven, the same abstraction becomes recoverable autonomous operations for DAO treasuries.
 
 ## Opportunity Ranking
+
+```mermaid
+quadrantChart
+  title Flow Opportunities: Pain vs Demo Clarity
+  x-axis "Low Demo Clarity" --> "High Demo Clarity"
+  y-axis "Low Pain" --> "High Pain"
+
+  "Position Migration": [0.85, 0.9]
+  "Liquidation Protection": [0.8, 0.85]
+  "Leveraged Adjustment": [0.5, 0.85]
+  "Debt Refinancing": [0.5, 0.8]
+  "Yield Rebalancing": [0.8, 0.55]
+  "DCA": [0.8, 0.5]
+  "LP Migration": [0.5, 0.55]
+  "NFT Post-Actions": [0.8, 0.25]
+  "AutoDAO": [0.5, 0.5]
+```
 
 | Flow | Demo clarity | Pain intensity | Fits abstractions | Recommended use |
 |---|---:|---:|---:|---|

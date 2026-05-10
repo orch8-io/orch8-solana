@@ -4,22 +4,26 @@ AutoDAO is an expansion story after the recoverable DeFi migration demo. It shou
 
 ## Why It Fits
 
-DAO treasury actions are multi-step operations:
+```mermaid
+flowchart TB
+  subgraph dao ["DAO Treasury Rebalance"]
+    direction TB
+    D1["Check treasury\nbalances"] --> D2["Verify governance\npolicy / signer"]
+    D2 --> D3["Fetch route /\ndeposit opportunity"]
+    D3 --> D4["Move funds"]
+    D4 --> D5["Deposit into yield\nvenue or allocation"]
+    D5 --> D6["Publish treasury\nreport"]
+    D6 --> D7["Notify members\nor signers"]
+  end
 
-1. Check treasury balances.
-2. Verify governance policy or signer approval.
-3. Fetch a route or deposit opportunity.
-4. Move funds.
-5. Deposit into a yield venue or safe allocation.
-6. Publish a treasury report.
-7. Notify members or signers.
+  D4 -.-x|"❌ fails here"| PAIN["Funds idle or exposed\nInconsistent with approved plan\nMembers lose trust"]
 
-Painful failure:
+  PAIN --> REC["orch8: same recovery model\npark · rollback · ask signers · report"]
 
-- A vote or policy approves one intent.
-- Execution partially completes.
-- Funds become idle, exposed, or inconsistent with the approved plan.
-- Members need a clear report and a safe next action.
+  style PAIN fill:#ffcccc,stroke:#cc0000,color:#333
+  style REC fill:#cce5ff,stroke:#0d6efd,color:#333
+  style D4 fill:#fff3cd,stroke:#ffc107,color:#333
+```
 
 ## Constructor Definition
 

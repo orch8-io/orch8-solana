@@ -448,59 +448,75 @@ function validateOperation(operation: RecoverableOperation): void {
 
   const ids = new Set<string>();
   for (const step of operation.steps) {
-    if (!step.id.trim()) {
-      throw new Error("Every operation step needs a short id, for example 'withdraw_collateral'");
+    validateStep(step, ids);
+  }
+}
+
+function validateStep(step: RecoverableStep, ids: Set<string>): void {
+  if (!step.id.trim()) {
+    throw new Error("Every operation step needs a short id, for example 'withdraw_collateral'");
+  }
+  if (!step.do.trim()) {
+    throw new Error(`Step '${step.id}' needs a 'do' handler`);
+  }
+  if (step.userDecision) {
+    validateUserDecision(step.id, step.userDecision);
+  }
+  validateGuards(step.id, step.guards ?? []);
+  if (step.failure) {
+    validateFailureClassification(step.id, step.failure);
+  }
+  if (ids.has(step.id)) {
+    throw new Error(`Step id '${step.id}' is used more than once; choose unique step ids`);
+  }
+  ids.add(step.id);
+}
+
+function validateUserDecision(stepId: string, decision: UserDecisionPolicy): void {
+  if (!decision.question.trim()) {
+    throw new Error(`Step '${stepId}' user decision needs a question`);
+  }
+  if (decision.choices.length === 0) {
+    throw new Error(`Step '${stepId}' user decision needs at least one choice`);
+  }
+  if (!decision.choices.includes(decision.defaultChoice)) {
+    throw new Error(`Step '${stepId}' user decision default must be one of its choices`);
+  }
+  if (decision.timeoutSeconds !== undefined && decision.timeoutSeconds <= 0) {
+    throw new Error(`Step '${stepId}' user decision timeout must be greater than zero seconds`);
+  }
+  if (decision.onTimeout && !decision.choices.includes(decision.onTimeout)) {
+    throw new Error(`Step '${stepId}' user decision timeout action must be one of its choices`);
+  }
+}
+
+function validateGuards(stepId: string, guards: GuardPolicy[]): void {
+  const guardIds = new Set<string>();
+  for (const guard of guards) {
+    if (!guard.id.trim()) {
+      throw new Error(`Step '${stepId}' has a guard without an id`);
     }
-    if (!step.do.trim()) {
-      throw new Error(`Step '${step.id}' needs a 'do' handler`);
+    if (!guard.handler.trim()) {
+      throw new Error(`Guard '${guard.id}' on step '${stepId}' needs a handler`);
     }
-    if (step.userDecision) {
-      if (!step.userDecision.question.trim()) {
-        throw new Error(`Step '${step.id}' user decision needs a question`);
-      }
-      if (step.userDecision.choices.length === 0) {
-        throw new Error(`Step '${step.id}' user decision needs at least one choice`);
-      }
-      if (!step.userDecision.choices.includes(step.userDecision.defaultChoice)) {
-        throw new Error(`Step '${step.id}' user decision default must be one of its choices`);
-      }
-      if (step.userDecision.timeoutSeconds !== undefined && step.userDecision.timeoutSeconds <= 0) {
-        throw new Error(`Step '${step.id}' user decision timeout must be greater than zero seconds`);
-      }
-      if (step.userDecision.onTimeout && !step.userDecision.choices.includes(step.userDecision.onTimeout)) {
-        throw new Error(`Step '${step.id}' user decision timeout action must be one of its choices`);
-      }
+    if (guardIds.has(guard.id)) {
+      throw new Error(`Guard id '${guard.id}' is used more than once on step '${stepId}'`);
     }
-    const guardIds = new Set<string>();
-    for (const guard of step.guards ?? []) {
-      if (!guard.id.trim()) {
-        throw new Error(`Step '${step.id}' has a guard without an id`);
-      }
-      if (!guard.handler.trim()) {
-        throw new Error(`Guard '${guard.id}' on step '${step.id}' needs a handler`);
-      }
-      if (guardIds.has(guard.id)) {
-        throw new Error(`Guard id '${guard.id}' is used more than once on step '${step.id}'`);
-      }
-      guardIds.add(guard.id);
+    guardIds.add(guard.id);
+  }
+}
+
+function validateFailureClassification(stepId: string, failure: FailureClassificationPolicy): void {
+  if (failure.classifyWith !== undefined && !failure.classifyWith.trim()) {
+    throw new Error(`Step '${stepId}' failure classification handler cannot be empty`);
+  }
+  if (failure.examples.length === 0) {
+    throw new Error(`Step '${stepId}' failure classification needs at least one example`);
+  }
+  for (const example of failure.examples) {
+    if (!example.code.trim()) {
+      throw new Error(`Step '${stepId}' has a failure example without a code`);
     }
-    if (step.failure) {
-      if (step.failure.classifyWith !== undefined && !step.failure.classifyWith.trim()) {
-        throw new Error(`Step '${step.id}' failure classification handler cannot be empty`);
-      }
-      if (step.failure.examples.length === 0) {
-        throw new Error(`Step '${step.id}' failure classification needs at least one example`);
-      }
-      for (const example of step.failure.examples) {
-        if (!example.code.trim()) {
-          throw new Error(`Step '${step.id}' has a failure example without a code`);
-        }
-      }
-    }
-    if (ids.has(step.id)) {
-      throw new Error(`Step id '${step.id}' is used more than once; choose unique step ids`);
-    }
-    ids.add(step.id);
   }
 }
 

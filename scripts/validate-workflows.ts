@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+import { waitForExit, waitForReady } from "./lib.js";
 
 const root = process.cwd();
 const enginePath = resolve(root, "bin/darwin-arm64/orch8-server");
@@ -50,49 +51,14 @@ function startEngine(workDir: string, dataDir: string, port: number): ChildProce
 }
 
 async function waitForEngine(engine: ChildProcess, port: number): Promise<void> {
-  const deadline = Date.now() + 30_000;
   const url = `http://127.0.0.1:${port}/health/ready`;
-  const logs: string[] = [];
-
-  engine.stdout?.on("data", (chunk: Buffer) => {
-    logs.push(chunk.toString("utf8").trim());
-  });
-  engine.stderr?.on("data", (chunk: Buffer) => {
-    logs.push(chunk.toString("utf8").trim());
-  });
-
-  while (Date.now() < deadline) {
-    if (engine.exitCode !== null || engine.signalCode !== null) {
-      throw new Error(
-        [
-          `Engine exited before becoming ready at ${url}`,
-          logs.filter(Boolean).join("\n"),
-        ]
-          .filter(Boolean)
-          .join("\n"),
-      );
-    }
-
-    try {
+  await waitForReady(engine, {
+    label: `Engine at ${url}`,
+    probe: async () => {
       const response = await fetch(url);
-      if (response.ok) {
-        return;
-      }
-    } catch {
-      // Server is still booting.
-    }
-
-    await sleep(200);
-  }
-
-  throw new Error(
-    [
-      `Engine did not become ready at ${url}`,
-      logs.filter(Boolean).join("\n"),
-    ]
-      .filter(Boolean)
-      .join("\n"),
-  );
+      return response.ok;
+    },
+  });
 }
 
 function deployWorkflow(workflow: string, port: number): void {
@@ -118,20 +84,6 @@ function deployWorkflow(workflow: string, port: number): void {
   }
 
   console.log(`Validated ${workflow}`);
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function waitForExit(child: ChildProcess): Promise<void> {
-  return new Promise((resolve) => {
-    if (child.exitCode !== null || child.signalCode !== null) {
-      resolve();
-      return;
-    }
-    child.once("exit", () => resolve());
-  });
 }
 
 main().catch((error) => {

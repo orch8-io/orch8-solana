@@ -8,15 +8,6 @@ This repository contains:
 - `packages/solana-worker`: mockable Solana worker handlers for transaction lifecycle, balance checks, failure classification, and recovery actions.
 - `demo/constructor-ui`: static browser constructor for sketching recoverable operation sequences and visual recovery flows.
 - `demo/recoverable-migration`: a Frontier Hackathon demo showing a DeFi position migration that fails halfway and recovers.
-- `docs/crypto/autodao-expansion.md`: DAO treasury expansion example for after the primary demo.
-- `docs/crypto/demo-evidence.md`: proof transcript, claims proven, and recording placeholder.
-- `docs/crypto/frontier-demo.md`: submission script, terminal output, and one-command demo path.
-- `docs/crypto/multistep-flow-opportunities.md`: painful multi-step Solana flow examples and positioning.
-- `docs/crypto/recovery-patterns.md`: guard checks, failure classification, and user decision timeout patterns.
-- `docs/crypto/flow-templates.md`: yield rebalancing and liquidation protection constructor templates.
-- `docs/crypto/wow-demo.md`: committee-facing local Solana proof command.
-- `docs/crypto/post-hackathon-hn-outline.md`: post-hackathon writing outline.
-- `docs/crypto/action-points.md`: prioritized implementation checklist.
 
 ## Why This Exists
 
@@ -57,6 +48,7 @@ npm run validate:constructor
 npm run validate:worker-http
 npm run validate:local-solana
 npm run validate:workflows
+npm run validate:devnet-solana   # requires devnet SOL — see script for funding instructions
 ```
 
 The static constructor UI is at `demo/constructor-ui/index.html`. It can show the operation JSON, generated workflow JSON, and a visual flow of the happy path plus recovery branches.
@@ -110,22 +102,33 @@ npm run worker:start
 ## Repository Layout
 
 ```text
+packages/
+  recoverable-operation-builder/   # TypeScript constructor → orch8 workflow JSON
+    src/index.ts
+  solana-worker/                   # mock Solana handlers (HTTP + in-process)
+    src/index.ts
+    src/handlers.ts
+    src/server.ts
+    src/steps.ts
 demo/
   constructor-ui/
-    index.html
+    index.html                     # static browser UI, no build step
   recoverable-migration/
     src/build-workflow.ts
     src/run-demo.ts
     workflows/
-bin/
-  darwin-arm64/
-    orch8
-    orch8-server
-packages/
-  recoverable-operation-builder/
-    src/index.ts
-  solana-worker/
-    src/index.ts
+scripts/
+  lib.ts                           # shared utilities (sleep, waitForExit)
+  validate-constructor.ts
+  validate-workflows.ts
+  validate-local-solana.ts
+  validate-worker-http.ts
+  validate-devnet-solana.ts
+  run-solana-wow-demo.ts
+  smoke-fresh-clone.sh
+docs/crypto/                       # positioning, demo scripts, patterns
+bin/darwin-arm64/                   # local engine binaries (macOS ARM64)
+orch8.toml                         # engine configuration
 ```
 
 ## Core Abstraction

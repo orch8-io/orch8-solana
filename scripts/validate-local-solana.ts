@@ -10,6 +10,7 @@ import {
   SystemProgram,
   Transaction,
 } from "@solana/web3.js";
+import { sleep, waitForExit, waitForReady } from "./lib.js";
 
 const rpcUrl = "http://127.0.0.1:8899";
 
@@ -55,40 +56,14 @@ function startValidator(ledgerDir: string): ChildProcess {
 
 async function waitForValidator(validator: ChildProcess): Promise<void> {
   const connection = new Connection(rpcUrl, "confirmed");
-  const deadline = Date.now() + 30_000;
-  const logs: string[] = [];
-
-  validator.stdout?.on("data", (chunk: Buffer) => logs.push(chunk.toString("utf8").trim()));
-  validator.stderr?.on("data", (chunk: Buffer) => logs.push(chunk.toString("utf8").trim()));
-
-  while (Date.now() < deadline) {
-    if (validator.exitCode !== null || validator.signalCode !== null) {
-      throw new Error(
-        [
-          "Local Solana validator exited before becoming ready",
-          logs.filter(Boolean).join("\n"),
-        ]
-          .filter(Boolean)
-          .join("\n"),
-      );
-    }
-
-    try {
+  await waitForReady(validator, {
+    label: "Local Solana validator",
+    probe: async () => {
       await connection.getLatestBlockhash();
-      return;
-    } catch {
-      await sleep(250);
-    }
-  }
-
-  throw new Error(
-    [
-      "Local Solana validator did not become ready",
-      logs.filter(Boolean).join("\n"),
-    ]
-      .filter(Boolean)
-      .join("\n"),
-  );
+      return true;
+    },
+    intervalMs: 250,
+  });
 }
 
 async function runTransferProof(): Promise<LocalSolanaProof> {
@@ -144,12 +119,13 @@ async function runTransferProof(): Promise<LocalSolanaProof> {
   };
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function waitForSignature(connection: Connection, signature: string): Promise<void> {
-  const deadline = Date.now() + 30_000;
+export async function waitForSignature(
+  connection: Connection,
+  signature: string,
+  timeoutMs = 30_000,
+  intervalMs = 250,
+): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
     const response = await connection.getSignatureStatuses([signature]);
@@ -163,20 +139,10 @@ async function waitForSignature(connection: Connection, signature: string): Prom
       return;
     }
 
-    await sleep(250);
+    await sleep(intervalMs);
   }
 
   throw new Error(`Timed out waiting for transaction ${signature}`);
-}
-
-function waitForExit(child: ChildProcess): Promise<void> {
-  return new Promise((resolve) => {
-    if (child.exitCode !== null || child.signalCode !== null) {
-      resolve();
-      return;
-    }
-    child.once("exit", () => resolve());
-  });
 }
 
 async function main(): Promise<void> {

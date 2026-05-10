@@ -2,17 +2,10 @@ import { spawnSync } from "node:child_process";
 import {
   createInitialDemoState,
   type DemoState,
-  type HandlerResponse,
 } from "../packages/solana-worker/src/index.js";
-import { demoHandlers } from "../packages/solana-worker/src/handlers.js";
+import { runHandler } from "../packages/solana-worker/src/handlers.js";
+import { migrationSteps } from "../packages/solana-worker/src/steps.js";
 import { runLocalSolanaProof } from "./validate-local-solana.js";
-
-interface Step {
-  id: string;
-  handler: string;
-  undo?: string;
-  fallback?: string;
-}
 
 interface MigrationProof {
   unprotectedIdle: boolean;
@@ -27,14 +20,6 @@ interface ProofRow {
   proof: string;
   status: "OK" | "FAIL";
 }
-
-const steps: Step[] = [
-  { id: "withdraw_collateral", handler: "withdraw_collateral", undo: "redeposit_collateral" },
-  { id: "claim_rewards", handler: "claim_rewards" },
-  { id: "swap_rewards", handler: "swap_rewards_to_usdc", undo: "swap_usdc_to_rewards" },
-  { id: "deposit_protocol_b", handler: "deposit_protocol_b", fallback: "park_assets" },
-  { id: "enable_leverage", handler: "enable_leverage" },
-];
 
 async function main(): Promise<void> {
   console.log("orch8 Solana Wow Demo");
@@ -90,7 +75,7 @@ function runMigrationProof(): MigrationProof {
 function runUnprotectedMigration(): { failureCode: string; state: DemoState } {
   let state = createInitialDemoState();
 
-  for (const step of steps) {
+  for (const step of migrationSteps) {
     const result = runHandler(step.handler, state);
     state = result.state;
 
@@ -105,7 +90,7 @@ function runUnprotectedMigration(): { failureCode: string; state: DemoState } {
 function runRecoverableMigration(): { failureCode: string; recoveryPath: string; state: DemoState } {
   let state = createInitialDemoState();
 
-  for (const step of steps) {
+  for (const step of migrationSteps) {
     const result = runHandler(step.handler, state);
     state = result.state;
 
@@ -123,16 +108,6 @@ function runRecoverableMigration(): { failureCode: string; recoveryPath: string;
   }
 
   return { failureCode: "none", recoveryPath: "none", state };
-}
-
-function runHandler(handlerName: string, state: DemoState): HandlerResponse {
-  const handler = demoHandlers[handlerName];
-
-  if (!handler) {
-    throw new Error(`Handler '${handlerName}' is not registered`);
-  }
-
-  return handler(state);
 }
 
 function runNodeScript(script: string): void {

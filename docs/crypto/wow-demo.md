@@ -8,9 +8,26 @@ npm run demo:solana-wow
 
 It combines three proofs in one run:
 
-1. local Solana validator can execute and confirm a real transaction,
-2. the recoverable migration fails mid-operation and parks assets,
-3. generated workflows are accepted by the local engine.
+```mermaid
+flowchart LR
+  subgraph proof1 ["Proof 1: Real Chain"]
+    V["Local Solana\nValidator"] --> TX["Confirmed\nTransaction"]
+  end
+
+  subgraph proof2 ["Proof 2: Recovery"]
+    F["Mid-operation\nFailure"] --> R["Assets\nParked Safely"]
+  end
+
+  subgraph proof3 ["Proof 3: Engine"]
+    W["Generated\nWorkflows"] --> E["Accepted by\norch8 Engine"]
+  end
+
+  proof1 ~~~ proof2 ~~~ proof3
+
+  style TX fill:#d4edda,stroke:#198754,color:#333
+  style R fill:#d4edda,stroke:#198754,color:#333
+  style E fill:#d4edda,stroke:#198754,color:#333
+```
 
 ## Expected Transcript Shape
 

@@ -2,24 +2,9 @@ import {
   createInitialDemoState,
   type DemoState,
   type HandlerFailure,
-  type HandlerResponse,
 } from "../../../packages/solana-worker/src/index.js";
-import { demoHandlers } from "../../../packages/solana-worker/src/handlers.js";
-
-interface Step {
-  id: string;
-  handler: string;
-  undo?: string;
-  fallback?: string;
-}
-
-const steps: Step[] = [
-  { id: "withdraw_collateral", handler: "withdraw_collateral", undo: "redeposit_collateral" },
-  { id: "claim_rewards", handler: "claim_rewards" },
-  { id: "swap_rewards", handler: "swap_rewards_to_usdc", undo: "swap_usdc_to_rewards" },
-  { id: "deposit_protocol_b", handler: "deposit_protocol_b", fallback: "park_assets" },
-  { id: "enable_leverage", handler: "enable_leverage" },
-];
+import { runHandler } from "../../../packages/solana-worker/src/handlers.js";
+import { migrationSteps, type DemoStep } from "../../../packages/solana-worker/src/steps.js";
 
 function main(): void {
   console.log("Recoverable Position Migration Demo");
@@ -35,7 +20,7 @@ function runUnprotected(): void {
   let state = createInitialDemoState();
   printState("Initial", state);
 
-  for (const step of steps) {
+  for (const step of migrationSteps) {
     const result = runHandler(step.handler, state);
     state = result.state;
 
@@ -54,10 +39,10 @@ function runUnprotected(): void {
 function runRecoverable(): void {
   console.log("Recoverable migration");
   let state = createInitialDemoState();
-  const completed: Step[] = [];
+  const completed: DemoStep[] = [];
   printState("Initial", state);
 
-  for (const step of steps) {
+  for (const step of migrationSteps) {
     const result = runHandler(step.handler, state);
     state = result.state;
 
@@ -94,7 +79,7 @@ function runRecoverable(): void {
   printState("Completed", state);
 }
 
-function rollback(completed: Step[], current: DemoState): DemoState {
+function rollback(completed: DemoStep[], current: DemoState): DemoState {
   let state = current;
   const reversible = completed.filter((step) => step.undo).reverse();
 
@@ -113,24 +98,6 @@ function rollback(completed: Step[], current: DemoState): DemoState {
   }
 
   return state;
-}
-
-function runHandler(handlerName: string, state: DemoState): HandlerResponse {
-  const handler = demoHandlers[handlerName];
-
-  if (!handler) {
-    return {
-      ok: false,
-      error: {
-        type: "permanent",
-        code: "handler_not_found",
-        message: `Handler '${handlerName}' is not registered`,
-      },
-      state,
-    };
-  }
-
-  return handler(state);
 }
 
 function printFailure(stepId: string, result: HandlerFailure): void {

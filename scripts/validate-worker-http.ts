@@ -1,6 +1,7 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { deepEqual, equal } from "node:assert/strict";
 import type { DemoState, HandlerFailure, HandlerResponse, HandlerResult } from "../packages/solana-worker/src/index.js";
+import { waitForExit, waitForReady } from "./lib.js";
 
 const port = 17071;
 const baseUrl = `http://127.0.0.1:${port}`;
@@ -29,42 +30,15 @@ function startWorker(): ChildProcess {
 }
 
 async function waitForWorker(worker: ChildProcess): Promise<void> {
-  const deadline = Date.now() + 10_000;
-  const logs: string[] = [];
-
-  worker.stdout?.on("data", (chunk: Buffer) => logs.push(chunk.toString("utf8").trim()));
-  worker.stderr?.on("data", (chunk: Buffer) => logs.push(chunk.toString("utf8").trim()));
-
-  while (Date.now() < deadline) {
-    if (worker.exitCode !== null || worker.signalCode !== null) {
-      throw new Error(
-        [
-          "Worker exited before becoming ready",
-          logs.filter(Boolean).join("\n"),
-        ]
-          .filter(Boolean)
-          .join("\n"),
-      );
-    }
-
-    try {
+  await waitForReady(worker, {
+    label: `Worker at ${baseUrl}`,
+    probe: async () => {
       const response = await fetch(`${baseUrl}/state`);
-      if (response.ok) {
-        return;
-      }
-    } catch {
-      await sleep(100);
-    }
-  }
-
-  throw new Error(
-    [
-      `Worker did not become ready at ${baseUrl}`,
-      logs.filter(Boolean).join("\n"),
-    ]
-      .filter(Boolean)
-      .join("\n"),
-  );
+      return response.ok;
+    },
+    timeoutMs: 10_000,
+    intervalMs: 100,
+  });
 }
 
 async function runWorkerProof(): Promise<void> {
@@ -137,20 +111,6 @@ function pickState(state: DemoState): Pick<DemoState, "walletCollateral" | "wall
     protocolB: state.protocolB,
     moneyMarket: state.moneyMarket,
   };
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function waitForExit(child: ChildProcess): Promise<void> {
-  return new Promise((resolve) => {
-    if (child.exitCode !== null || child.signalCode !== null) {
-      resolve();
-      return;
-    }
-    child.once("exit", () => resolve());
-  });
 }
 
 main().catch((error) => {

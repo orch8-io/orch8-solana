@@ -88,25 +88,51 @@ Validated demo/recoverable-migration/workflows/defi-migration-recoverable.json
 Validated generated workflows against local orch8 engine
 ```
 
+## The Core Contrast
+
+```mermaid
+flowchart LR
+  subgraph unprotected ["Unprotected Migration"]
+    direction TB
+    U1["Withdraw\n✅ ok"] --> U2["Claim\n✅ ok"]
+    U2 --> U3["Swap\n✅ ok"]
+    U3 --> U4["Deposit B\n❌ capacity full"]
+    U4 --> U5@{ shape: flag, label: "Assets idle in wallet\nwallet=100, usdc=5" }
+    style U5 fill:#ffcccc,stroke:#cc0000,color:#333
+  end
+
+  subgraph recoverable ["Recoverable Migration"]
+    direction TB
+    R1["Withdraw\n✅ ok"] --> R2["Claim\n✅ ok"]
+    R2 --> R3["Swap\n✅ ok"]
+    R3 --> R4["Deposit B\n❌ capacity full"]
+    R4 -->|"recovery"| R5["Park Assets\n✅ ok"]
+    R5 --> R6@{ shape: flag, label: "Assets safe in money market\nmoneyMarket=100, usdc=5" }
+    style R6 fill:#ccffcc,stroke:#00cc00,color:#333
+  end
+```
+
+Same steps. Same failure. Different outcome.
+
 ## Claims Proven
 
 ### 1. Partial success creates unsafe user state
 
-The unprotected migration succeeds at withdraw, claim, and swap. It then fails at the Protocol B deposit. The result is idle collateral and USDC in the wallet:
+The unprotected migration succeeds at withdraw, claim, and swap, then fails at Protocol B deposit. Assets end up idle:
 
 ```text
 wallet=100, protocolA=0, protocolB=0, moneyMarket=0, usdc=5
 ```
 
-### 2. The same failure can recover through an explicit operation path
+### 2. The same failure recovers through an explicit path
 
-The recoverable migration hits the same Protocol B capacity failure, then follows the configured fallback:
+The recoverable migration hits the same failure, then follows the configured fallback:
 
 ```text
 recovery deposit_protocol_b: park_assets
 ```
 
-The recovered state is safer:
+Recovered state is safer:
 
 ```text
 wallet=0, protocolA=0, protocolB=0, moneyMarket=100, usdc=5
@@ -114,7 +140,7 @@ wallet=0, protocolA=0, protocolB=0, moneyMarket=100, usdc=5
 
 ### 3. The constructor emits deployable workflow JSON
 
-The generated unprotected and recoverable workflow files are accepted by the bundled local engine:
+Generated workflows are accepted by the bundled local engine:
 
 ```text
 Validated demo/recoverable-migration/workflows/defi-migration-unprotected.json
@@ -123,7 +149,7 @@ Validated demo/recoverable-migration/workflows/defi-migration-recoverable.json
 
 ### 4. Local Solana runtime is reachable
 
-The local Solana smoke test proves the repo can connect to a real validator process:
+The local Solana smoke test proves the repo connects to a real validator process:
 
 ```text
 Local Solana validation passed
@@ -133,23 +159,21 @@ receiver_lamports=100000000
 
 ## What To Show First
 
-Lead with the state contrast:
+```mermaid
+flowchart TB
+  A["1. Show the state contrast"] --> B["2. Run local-chain proof"]
+  B --> C["3. Show the constructor API"]
+
+  A -.- A1["Unprotected: idle in wallet\nRecoverable: parked in money market"]
+  B -.- B1["npm run validate:local-solana"]
+  C -.- C1["reversibleStep · fallbackStep\nretryPolicy · userDecision · guard"]
+
+  style A fill:#4a90d9,color:#fff
+  style B fill:#4a90d9,color:#fff
+  style C fill:#4a90d9,color:#fff
+```
 
 | Flow | Failure | Final collateral state |
 | --- | --- | --- |
 | Unprotected | Protocol B full | idle in wallet |
 | Recoverable | Protocol B full | parked in money market |
-
-Also show the local-chain proof:
-
-```bash
-npm run validate:local-solana
-```
-
-Then show that this behavior comes from the constructor:
-
-- `reversibleStep` for undo paths,
-- `fallbackStep` for parking assets,
-- `retryPolicy` for transient failures,
-- `userDecision` for ambiguous recovery,
-- `guard` for pre-step safety checks.

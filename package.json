@@ -15,6 +15,7 @@
     "validate:constructor": "npm run build && node dist/scripts/validate-constructor.js",
     "validate:worker-http": "npm run build && node dist/scripts/validate-worker-http.js",
     "validate:local-solana": "npm run build && node dist/scripts/validate-local-solana.js",
+    "validate:devnet-solana": "npm run build && node dist/scripts/validate-devnet-solana.js",
     "validate:workflows": "npm run build && npm run demo:build-workflow && node dist/scripts/validate-workflows.js",
     "worker:start": "npm run build && node dist/packages/solana-worker/src/server.js",
     "engine:start": "mkdir -p var && ./bin/darwin-arm64/orch8-server --config orch8.toml --insecure"

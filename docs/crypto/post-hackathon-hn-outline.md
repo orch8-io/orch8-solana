@@ -12,45 +12,44 @@ The missing abstraction is not another retry loop. It is a recoverable operation
 
 ## Outline
 
-1. Open with the concrete failure.
+```mermaid
+flowchart TB
+  O1["1. Concrete failure\nMigration fails at step 4"] --> O2["2. Atomicity gap\nTX boundaries ≠ intent boundaries"]
+  O2 --> O3["3. Recoverable operation model\nforward · reverse · guard · fallback"]
+  O3 --> O4["4. Why retry isn't enough\nStale quotes make it worse"]
+  O4 --> O5["5. Show the demo\nnpm run demo:frontier"]
+  O5 --> O6["6. Expand beyond DeFi\nYield · Liquidation · LP · DCA · DAO"]
+  O6 --> O7["7. Product principle\nModel the operation, not the TX"]
 
-   A DeFi position migration withdraws collateral, claims rewards, swaps, then fails while depositing into the destination protocol. Each transaction did its job. The operation still failed.
+  style O1 fill:#ffcccc,stroke:#cc0000,color:#333
+  style O3 fill:#cce5ff,stroke:#0d6efd,color:#333
+  style O5 fill:#d4edda,stroke:#198754,color:#333
+  style O7 fill:#e2d9f3,stroke:#7c3aed,color:#333
+```
 
-2. Explain the atomicity gap.
+**1. Open with the concrete failure.**
+A DeFi position migration withdraws collateral, claims rewards, swaps, then fails while depositing into the destination protocol. Each transaction did its job. The operation still failed.
 
-   Atomic transactions protect a single transaction boundary. They do not preserve intent across a workflow with multiple on-chain and off-chain steps.
+**2. Explain the atomicity gap.**
+Atomic transactions protect a single transaction boundary. They do not preserve intent across a workflow with multiple on-chain and off-chain steps.
 
-3. Show the recoverable operation model.
+**3. Show the recoverable operation model.**
+The operation should declare: forward steps, reverse steps, guard checks, retry policy, fallback path, user decision path, and timeout defaults.
 
-   The operation should declare:
+**4. Show why retry is not enough.**
+Retrying a stale quote, a full destination vault, or a changed market route can make the outcome worse. Some failures need rollback, some need parking, and some need user input.
 
-   - forward steps,
-   - reverse steps,
-   - guard checks,
-   - retry policy,
-   - fallback path,
-   - user decision path,
-   - timeout defaults.
+**5. Show the demo.**
 
-4. Show why retry is not enough.
+```bash
+npm run demo:frontier
+```
 
-   Retrying a stale quote, a full destination vault, or a changed market route can make the outcome worse. Some failures need rollback, some need parking, and some need user input.
+**6. Expand beyond the demo.**
+The same pattern applies to yield rebalancing, liquidation protection, liquidity migration, recurring execution, NFT post-actions, and DAO treasury operations.
 
-5. Show the demo.
-
-   Link to the repo and point readers to:
-
-   ```bash
-   npm run demo:frontier
-   ```
-
-6. Expand beyond the demo.
-
-   The same pattern applies to yield rebalancing, liquidation protection, liquidity migration, recurring execution, NFT post-actions, and DAO treasury operations.
-
-7. Close with the product principle.
-
-   Developers should model the user's operation, not just the next transaction.
+**7. Close with the product principle.**
+Developers should model the user's operation, not just the next transaction.
 
 ## Notes For Tone
 

@@ -35,3 +35,11 @@ export const demoHandlers: Record<string, DemoHandler> = {
   return_to_treasury: returnToTreasury,
   publish_treasury_report: publishTreasuryReport,
 };
+
+export function runHandler(handlerName: string, state: DemoState): HandlerResponse {
+  const handler = demoHandlers[handlerName];
+  if (!handler) {
+    throw new Error(`Handler '${handlerName}' is not registered`);
+  }
+  return handler(state);
+}

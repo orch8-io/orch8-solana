@@ -2,6 +2,32 @@
 
 These patterns keep the constructor focused on real multi-step operation pain: retries alone are not enough when part of the user's intent has already executed.
 
+```mermaid
+flowchart TB
+  Start["Step fails"] --> Classify{"Classify\nfailure"}
+
+  Classify -->|"transient\n(blockhash, fees)"| Retry["Retry\nwith backoff"]
+  Classify -->|"capacity\n(vault full)"| Park["Park assets\nin safe venue"]
+  Classify -->|"market moved\n(slippage)"| Ask["Ask user\nwhat to do"]
+  Classify -->|"timeout\n(no response)"| Timeout["Park assets\n(safest default)"]
+
+  Retry -->|"still failing"| Rollback{"Rollback\nsafe?"}
+  Ask --> UserChoice{"User\nchoice"}
+
+  Rollback -->|"yes"| Undo["Reverse\ncompleted steps"]
+  Rollback -->|"no"| Park
+
+  UserChoice -->|"retry"| Retry
+  UserChoice -->|"rollback"| Undo
+  UserChoice -->|"park"| Park
+  UserChoice -->|"wait"| Wait["Hold & resume\nlater"]
+
+  style Park fill:#fff3cd,stroke:#ffc107,color:#333
+  style Undo fill:#cce5ff,stroke:#0d6efd,color:#333
+  style Retry fill:#d4edda,stroke:#198754,color:#333
+  style Ask fill:#e2d9f3,stroke:#7c3aed,color:#333
+```
+
 ## Asset Guards
 
 Guards run before the forward step.

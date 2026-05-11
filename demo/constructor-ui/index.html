@@ -106,6 +106,90 @@
         font: 13px/1.5 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
       }
 
+      .json-tree {
+        margin: 0;
+        overflow: auto;
+        min-height: 320px;
+        max-height: 72vh;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #171b1d;
+        color: #edf2ee;
+        padding: 16px;
+        font: 13px/1.5 "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        list-style: none;
+      }
+
+      .json-tree ul {
+        list-style: none;
+        padding-left: 20px;
+        margin: 0;
+      }
+
+      .json-tree li {
+        position: relative;
+      }
+
+      .json-toggle {
+        cursor: pointer;
+        user-select: none;
+      }
+
+      .json-toggle::before {
+        content: "\25BC";
+        display: inline-block;
+        width: 16px;
+        font-size: 10px;
+        color: var(--muted);
+        transition: transform 0.15s;
+      }
+
+      .json-toggle.collapsed::before {
+        transform: rotate(-90deg);
+      }
+
+      .json-toggle.collapsed + ul {
+        display: none;
+      }
+
+      .json-toggle.collapsed + ul + .json-bracket-close {
+        display: none;
+      }
+
+      .json-toggle.collapsed > .json-preview {
+        display: inline;
+      }
+
+      .json-preview {
+        display: none;
+        color: var(--muted);
+        font-style: italic;
+      }
+
+      .json-key {
+        color: #8cb4e0;
+      }
+
+      .json-string {
+        color: #a8d4a2;
+      }
+
+      .json-number {
+        color: #d4a8d4;
+      }
+
+      .json-bool {
+        color: #e0c08c;
+      }
+
+      .json-null {
+        color: var(--muted);
+      }
+
+      .json-bracket {
+        color: #8a8a8a;
+      }
+
       .hidden {
         display: none;
       }
@@ -603,6 +687,15 @@
             decision: false,
           },
           {
+            id: "claim_rewards",
+            handler: "claim_rewards",
+            undo: "",
+            retry: true,
+            guard: "",
+            fallback: "",
+            decision: false,
+          },
+          {
             id: "swap_rewards",
             handler: "swap_rewards_to_usdc",
             undo: "swap_usdc_to_rewards",
@@ -618,6 +711,15 @@
             retry: true,
             guard: "check_protocol_capacity",
             fallback: "park_assets",
+            decision: false,
+          },
+          {
+            id: "enable_leverage",
+            handler: "enable_leverage",
+            undo: "disable_leverage",
+            retry: true,
+            guard: "check_deposit_confirmed",
+            fallback: "",
             decision: false,
           },
         ],
@@ -659,14 +761,24 @@
         const workflow = buildWorkflow(operation);
         const showFlow = state.tab === "flow";
 
-        elements.output.classList.toggle("hidden", showFlow);
+        elements.output.classList.toggle("hidden", true);
         elements.flowView.classList.toggle("hidden", !showFlow);
+
+        let jsonTreeEl = document.getElementById("jsonTree");
+        if (!jsonTreeEl) {
+          jsonTreeEl = document.createElement("div");
+          jsonTreeEl.id = "jsonTree";
+          jsonTreeEl.className = "json-tree";
+          elements.output.parentNode.insertBefore(jsonTreeEl, elements.output);
+        }
+        jsonTreeEl.classList.toggle("hidden", showFlow);
 
         if (showFlow) {
           elements.flowView.innerHTML = renderFlow(operation);
         } else {
           const output = state.tab === "operation" ? operation : workflow;
-          elements.output.textContent = JSON.stringify(output, null, 2);
+          jsonTreeEl.innerHTML = "";
+          jsonTreeEl.appendChild(buildJsonTree(output, null, true));
         }
 
         elements.stepCount.textContent = String(state.steps.length);
@@ -674,6 +786,85 @@
         elements.rollbackCount.textContent = String(state.steps.filter((step) => step.undo).length);
         elements.decisionCount.textContent = String(state.steps.filter((step) => step.decision).length);
         elements.statusText.textContent = `${operation.name} ready`;
+      }
+
+      function buildJsonTree(value, key, startExpanded) {
+        const li = document.createElement("li");
+
+        if (value !== null && typeof value === "object") {
+          const isArray = Array.isArray(value);
+          const entries = isArray ? value.map((v, i) => [i, v]) : Object.entries(value);
+          const openBracket = isArray ? "[" : "{";
+          const closeBracket = isArray ? "]" : "}";
+          const count = entries.length;
+          const preview = isArray
+            ? `${count} item${count !== 1 ? "s" : ""}`
+            : entries.map(([k]) => k).slice(0, 3).join(", ") + (count > 3 ? ", ..." : "");
+
+          const toggle = document.createElement("span");
+          toggle.className = "json-toggle" + (startExpanded ? "" : " collapsed");
+
+          if (key !== null) {
+            const keySpan = document.createElement("span");
+            keySpan.className = "json-key";
+            keySpan.textContent = `"${key}"`;
+            toggle.appendChild(keySpan);
+            toggle.appendChild(document.createTextNode(": "));
+          }
+          const bracketSpan = document.createElement("span");
+          bracketSpan.className = "json-bracket";
+          bracketSpan.textContent = openBracket;
+          toggle.appendChild(bracketSpan);
+          toggle.appendChild(document.createTextNode(" "));
+          const previewSpan = document.createElement("span");
+          previewSpan.className = "json-preview";
+          previewSpan.textContent = `${preview} ${closeBracket}`;
+          toggle.appendChild(previewSpan);
+
+          toggle.addEventListener("click", (e) => {
+            e.stopPropagation();
+            toggle.classList.toggle("collapsed");
+          });
+
+          const ul = document.createElement("ul");
+          for (const [k, v] of entries) {
+            ul.appendChild(buildJsonTree(v, k, false));
+          }
+
+          const closeLine = document.createElement("span");
+          closeLine.className = "json-bracket json-bracket-close";
+          closeLine.textContent = closeBracket;
+
+          li.appendChild(toggle);
+          li.appendChild(ul);
+          li.appendChild(closeLine);
+        } else {
+          if (key !== null) {
+            const keySpan = document.createElement("span");
+            keySpan.className = "json-key";
+            keySpan.textContent = `"${key}"`;
+            li.appendChild(keySpan);
+            li.appendChild(document.createTextNode(": "));
+          }
+
+          const valSpan = document.createElement("span");
+          if (typeof value === "string") {
+            valSpan.className = "json-string";
+            valSpan.textContent = `"${value}"`;
+          } else if (typeof value === "number") {
+            valSpan.className = "json-number";
+            valSpan.textContent = String(value);
+          } else if (typeof value === "boolean") {
+            valSpan.className = "json-bool";
+            valSpan.textContent = String(value);
+          } else {
+            valSpan.className = "json-null";
+            valSpan.textContent = "null";
+          }
+          li.appendChild(valSpan);
+        }
+
+        return li;
       }
 
       function renderFlow(operation) {

@@ -68,7 +68,7 @@ export function withdrawCollateral(state: DemoState): HandlerResponse {
 
 export function redepositCollateral(state: DemoState): HandlerResponse {
   if (state.walletCollateral <= 0) {
-    return failure(state, "permanent", "nothing_to_redeposit", "Wallet collateral is empty");
+    return success(state, "noop_nothing_to_redeposit");
   }
 
   const next = { ...state, protocolA: state.protocolA + state.walletCollateral, walletCollateral: 0 };
@@ -112,7 +112,7 @@ export function depositProtocolB(state: DemoState): HandlerResponse {
 
 export function enableLeverage(state: DemoState): HandlerResponse {
   if (state.protocolB <= 0) {
-    return failure(state, "permanent", "nothing_to_leverage", "Protocol B position is empty");
+    return success(state, "noop_nothing_to_leverage");
   }
 
   return success(state, "leverage_enabled");
@@ -168,7 +168,7 @@ const failureKindMap: Record<string, string> = {
 export function classifySolanaFailure(state: DemoState): HandlerResponse {
   const code = state.lastFailureCode;
   if (!code) {
-    return failure(state, "permanent", "no_failure_to_classify", "No recent failure to classify");
+    return success(state, "no_failure_to_classify", { kind: "none" });
   }
   const kind = failureKindMap[code] ?? "unknown";
   const next = { ...state, lastFailureClassification: kind };

@@ -65,8 +65,27 @@ async function runWorkerProof(): Promise<void> {
   const state = await getState();
   deepEqual(pickState(state), pickState(recovery.state));
 
+  await post("/reset");
+
+  await expectSuccess("/handlers/check_asset_owner", "asset_owner_verified");
+  await expectSuccess("/handlers/check_withdrawable_balance", "withdrawable_balance_ok");
+
+  const capacityCheck = await post("/handlers/check_protocol_capacity");
+  equal(capacityCheck.ok, false);
+  equal((capacityCheck as HandlerFailure).error.code, "protocol_b_capacity_full");
+
+  await expectSuccess("/handlers/withdraw_collateral", "withdrawn");
+  const depositFail = await post("/handlers/deposit_protocol_b");
+  equal(depositFail.ok, false);
+
+  await expectSuccess("/handlers/classify_solana_failure", "failure_classified");
+  await expectSuccess("/handlers/mark_operation_failed", "operation_marked_failed");
+
+  await post("/reset");
+  await expectSuccess("/handlers/request_operator_review", "operator_review_requested");
+
   console.log("Worker HTTP validation passed");
-  console.log(`state=${JSON.stringify(pickState(state))}`);
+  console.log(`state=${JSON.stringify(pickState(await getState()))}`);
 }
 
 async function expectSuccess(path: string, status: string): Promise<HandlerResult> {

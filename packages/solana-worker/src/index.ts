@@ -8,6 +8,10 @@ export interface DemoState {
   moneyMarket: number;
   protocolBCapacityAvailable: boolean;
   failureMode: DemoFailureMode;
+  lastFailureCode: string | null;
+  lastFailureClassification: string | null;
+  operationFailed: boolean;
+  operatorReviewRequested: boolean;
   daoTreasuryUsdc: number;
   daoYieldVenueUsdc: number;
   daoPolicyApproved: boolean;
@@ -42,6 +46,10 @@ export function createInitialDemoState(): DemoState {
     moneyMarket: 0,
     protocolBCapacityAvailable: false,
     failureMode: "protocol_b_capacity_full",
+    lastFailureCode: null,
+    lastFailureClassification: null,
+    operationFailed: false,
+    operatorReviewRequested: false,
     daoTreasuryUsdc: 1_000,
     daoYieldVenueUsdc: 0,
     daoPolicyApproved: true,
@@ -126,8 +134,61 @@ export function askUser(state: DemoState): HandlerResponse {
   });
 }
 
-export function classifySolanaFailure(response: HandlerFailure): string {
-  return response.error.code;
+export function checkAssetOwner(state: DemoState): HandlerResponse {
+  const totalAssets = state.protocolA + state.walletCollateral + state.protocolB + state.moneyMarket;
+  if (totalAssets <= 0) {
+    return failure(state, "permanent", "no_assets", "No collateral found in any account");
+  }
+  return success(state, "asset_owner_verified", { totalAssets });
+}
+
+export function checkWithdrawableBalance(state: DemoState): HandlerResponse {
+  if (state.protocolA <= 0) {
+    return failure(state, "permanent", "insufficient_balance", "Protocol A has no withdrawable balance");
+  }
+  return success(state, "withdrawable_balance_ok", { available: state.protocolA });
+}
+
+export function checkProtocolCapacity(state: DemoState): HandlerResponse {
+  if (!state.protocolBCapacityAvailable || state.failureMode === "protocol_b_capacity_full") {
+    return failure(state, "recoverable", "protocol_b_capacity_full", "Protocol B is at capacity");
+  }
+  return success(state, "protocol_capacity_ok");
+}
+
+const failureKindMap: Record<string, string> = {
+  blockhash_not_found: "transient",
+  priority_fee_too_low: "transient",
+  slippage_exceeded: "market_moved",
+  protocol_b_capacity_full: "capacity",
+  protocol_capacity_full: "capacity",
+  user_timeout: "user_timeout",
+};
+
+export function classifySolanaFailure(state: DemoState): HandlerResponse {
+  const code = state.lastFailureCode;
+  if (!code) {
+    return failure(state, "permanent", "no_failure_to_classify", "No recent failure to classify");
+  }
+  const kind = failureKindMap[code] ?? "unknown";
+  const next = { ...state, lastFailureClassification: kind };
+  return success(next, "failure_classified", { code, kind });
+}
+
+export function markOperationFailed(state: DemoState): HandlerResponse {
+  const next = { ...state, operationFailed: true };
+  return success(next, "operation_marked_failed", {
+    lastFailureCode: state.lastFailureCode,
+    lastFailureClassification: state.lastFailureClassification,
+  });
+}
+
+export function requestOperatorReview(state: DemoState): HandlerResponse {
+  const next = { ...state, operatorReviewRequested: true };
+  return success(next, "operator_review_requested", {
+    lastFailureCode: state.lastFailureCode,
+    lastFailureClassification: state.lastFailureClassification,
+  });
 }
 
 export function checkTreasuryBalances(state: DemoState): HandlerResponse {

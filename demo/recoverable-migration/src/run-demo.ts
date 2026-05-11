@@ -25,6 +25,7 @@ function runUnprotected(): void {
     state = result.state;
 
     if (!result.ok) {
+      state = { ...state, lastFailureCode: result.error.code };
       printFailure(step.id, result);
       printState("Stopped with assets idle", state);
       return;
@@ -52,6 +53,7 @@ function runRecoverable(): void {
       continue;
     }
 
+    state = { ...state, lastFailureCode: result.error.code };
     printFailure(step.id, result);
 
     if (step.fallback) {

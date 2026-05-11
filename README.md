@@ -2,6 +2,8 @@
 
 Recoverable Solana operations for workflows that span multiple transactions.
 
+![Demo](docs/crypto/assets/recoverable-migration-demo.gif)
+
 This repository contains:
 
 - `packages/recoverable-operation-builder`: a friendly TypeScript constructor that turns reversible Solana operation definitions into orch8 workflow JSON.

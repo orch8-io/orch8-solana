@@ -69,6 +69,9 @@ function startServer(): void {
 
       const result = handler(state);
       state = result.state;
+      if (!result.ok) {
+        state = { ...state, lastFailureCode: result.error.code };
+      }
       json(res, result.ok ? 200 : 409, result);
       return;
     }
